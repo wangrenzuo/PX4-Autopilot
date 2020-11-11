@@ -120,6 +120,10 @@ public:
 	 */
 	static int		start(int argc, char *argv[]);
 
+	bool running() const { return _task_running.load(); }
+	bool should_exit() const { return _task_should_exit.load(); }
+	void request_stop() { _task_should_exit.store(true); }
+
 	/**
 	 * Display the mavlink status.
 	 */
@@ -130,6 +134,7 @@ public:
 	 */
 	void			display_status_streams();
 
+	static int		stop_command(int argc, char *argv[]);
 	static int		stream_command(int argc, char *argv[]);
 
 	static int		instance_count();
@@ -439,8 +444,6 @@ public:
 
 	int 			get_socket_fd() { return _socket_fd; };
 
-	bool			_task_should_exit{false};	/**< Mavlink task should exit iff true. */
-
 #if defined(MAVLINK_UDP)
 	unsigned short		get_network_port() { return _network_port; }
 
@@ -517,6 +520,10 @@ public:
 
 private:
 	int			_instance_id{0};
+	int			_task_id{-1};
+
+	px4::atomic_bool	_task_should_exit{false};
+	px4::atomic_bool	_task_running{true};
 
 	bool			_transmitting_enabled{true};
 	bool			_transmitting_enabled_commanded{false};
@@ -528,7 +535,6 @@ private:
 
 	uORB::SubscriptionInterval _parameter_update_sub{ORB_ID(parameter_update), 1_s};
 
-	bool			_task_running{true};
 	static bool		_boot_complete;
 
 	static constexpr int	MAVLINK_MIN_INTERVAL{1500};
