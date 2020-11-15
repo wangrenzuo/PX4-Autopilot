@@ -3512,11 +3512,11 @@ public:
 
 	unsigned get_size() override
 	{
-		return _rc_sub.advertised() ? (MAVLINK_MSG_ID_RC_CHANNELS_LEN + MAVLINK_NUM_NON_PAYLOAD_BYTES) : 0;
+		return _input_rc_sub.advertised() ? (MAVLINK_MSG_ID_RC_CHANNELS_LEN + MAVLINK_NUM_NON_PAYLOAD_BYTES) : 0;
 	}
 
 private:
-	uORB::Subscription _rc_sub{ORB_ID(input_rc)};
+	uORB::Subscription _input_rc_sub{ORB_ID(input_rc)};
 
 	/* do not allow top copying this class */
 	MavlinkStreamRCChannels(MavlinkStreamRCChannels &) = delete;
@@ -3530,7 +3530,7 @@ protected:
 	{
 		input_rc_s rc;
 
-		if (_rc_sub.update(&rc)) {
+		if (_input_rc_sub.update(&rc)) {
 
 			/* send RC channel data and RSSI */
 			mavlink_rc_channels_t msg{};
