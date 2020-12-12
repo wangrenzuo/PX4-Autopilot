@@ -50,6 +50,7 @@
 #include <uORB/topics/estimator_sensor_bias.h>
 #include <uORB/topics/parameter_update.h>
 #include <uORB/topics/sensor_gyro.h>
+#include <uORB/topics/sensor_gyro_fft.h>
 #include <uORB/topics/sensor_gyro_fifo.h>
 #include <uORB/topics/sensor_selection.h>
 #include <uORB/topics/vehicle_angular_acceleration.h>
@@ -95,6 +96,7 @@ private:
 	uORB::Subscription _estimator_selector_status_sub{ORB_ID(estimator_selector_status)};
 	uORB::Subscription _estimator_sensor_bias_sub{ORB_ID(estimator_sensor_bias)};
 	uORB::Subscription _params_sub{ORB_ID(parameter_update)};
+	uORB::Subscription _sensor_gyro_fft_sub{ORB_ID(sensor_gyro_fft)};
 
 	uORB::SubscriptionCallbackWorkItem _sensor_selection_sub{this, ORB_ID(sensor_selection)};
 	uORB::SubscriptionCallbackWorkItem _sensor_sub{this, ORB_ID(sensor_gyro)};
@@ -119,6 +121,7 @@ private:
 	// angular velocity filters
 	math::LowPassFilter2pArray _lp_filter_velocity[3] {{kInitialRateHz, 30.0f}, {kInitialRateHz, 30.0f}, {kInitialRateHz, 30.0f}};
 	math::NotchFilterArray<float> _notch_filter_velocity[3] {};
+	math::NotchFilterArray<float> _dynamic_notch_filter[4][3] {};
 
 	// angular acceleration filter
 	math::LowPassFilter2p _lp_filter_acceleration[3] {{kInitialRateHz, 30.0f}, {kInitialRateHz, 30.0f}, {kInitialRateHz, 30.0f}};
@@ -141,6 +144,8 @@ private:
 	bool _reset_filters{false};
 
 	bool _fifo_available{false};
+
+	perf_counter_t _gyro_fft_notch_frequency_update_perf{perf_alloc(PC_COUNT, MODULE_NAME": gyro FFT notch update")};
 
 	DEFINE_PARAMETERS(
 		(ParamFloat<px4::params::IMU_GYRO_CUTOFF>) _param_imu_gyro_cutoff,

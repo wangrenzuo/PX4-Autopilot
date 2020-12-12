@@ -66,6 +66,8 @@ VehicleAngularVelocity::VehicleAngularVelocity() :
 VehicleAngularVelocity::~VehicleAngularVelocity()
 {
 	Stop();
+
+	perf_free(_gyro_fft_notch_frequency_update_perf);
 }
 
 bool VehicleAngularVelocity::Start()
@@ -374,6 +376,51 @@ void VehicleAngularVelocity::Run()
 	ParametersUpdate();
 
 	if (_fifo_available) {
+
+		// dynamic notch filter update
+		if (_sample_rate_determined) {
+			sensor_gyro_fft_s sensor_gyro_fft;
+
+			if (_sensor_gyro_fft_sub.update(&sensor_gyro_fft)) {
+				// TODO: device id
+				for (int i = 0; i < 4; i++) {
+					for (int axis = 0; axis < 3; axis++) {
+
+						float *peak_frequencies = nullptr;
+
+						switch (axis) {
+						case 0:
+							peak_frequencies = sensor_gyro_fft.peak_frequencies_x;
+							break;
+
+						case 1:
+							peak_frequencies = sensor_gyro_fft.peak_frequencies_y;
+							break;
+
+						case 2:
+							peak_frequencies = sensor_gyro_fft.peak_frequencies_z;
+							break;
+						}
+
+						if (PX4_ISFINITE(peak_frequencies[i]) && (peak_frequencies[i] > 10.f)
+						    && fabsf(_dynamic_notch_filter[i][axis].getNotchFreq() - peak_frequencies[i]) > 0.1f) {
+
+							_dynamic_notch_filter[i][axis].setParameters(_filter_sample_rate,
+									peak_frequencies[i], sensor_gyro_fft.resolution_hz);
+
+							if (_gyro_fft_notch_frequency_update_perf == nullptr) {
+								_gyro_fft_notch_frequency_update_perf = perf_alloc(PC_COUNT, MODULE_NAME": gyro FFT notch update");
+							}
+
+							if (_gyro_fft_notch_frequency_update_perf) {
+								perf_count(_gyro_fft_notch_frequency_update_perf);
+							}
+						}
+					}
+				}
+			}
+		}
+
 		// process all outstanding fifo messages
 		sensor_gyro_fifo_s sensor_fifo_data;
 
@@ -453,6 +500,13 @@ void VehicleAngularVelocity::Run()
 
 					for (int n = 0; n < N; n++) {
 						data[n] = raw_data[n];
+					}
+
+					// Apply dynamic notch filter from FFT
+					for (auto &dnf : _dynamic_notch_filter) {
+						if (dnf[axis].getNotchFreq() > 10.f) {
+							dnf[axis].applyDF1(data, N);
+						}
 					}
 
 					// Apply general notch filter (IMU_GYRO_NF_FREQ)

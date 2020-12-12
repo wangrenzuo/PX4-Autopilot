@@ -115,6 +115,7 @@ bool GyroFFT::SensorSelectionUpdate(bool force)
 
 void GyroFFT::VehicleIMUStatusUpdate()
 {
+	// TODO: device id
 	vehicle_imu_status_s vehicle_imu_status;
 
 	if (_vehicle_imu_status_sub.update(&vehicle_imu_status)) {
@@ -343,8 +344,8 @@ void GyroFFT::Run()
 					}
 
 					// reset
-					// shift buffer (75% overlap)
-					int overlap_start = FFT_LENGTH / 4;
+					// shift buffer (3/4 overlap)
+					const int overlap_start = FFT_LENGTH / 4;
 					memmove(&_gyro_data_buffer[axis][0], &_gyro_data_buffer[axis][overlap_start], sizeof(q15_t) * overlap_start * 3);
 					buffer_index = overlap_start * 3;
 				}

@@ -75,14 +75,14 @@ public:
 	bool init();
 
 private:
-	static constexpr uint16_t FFT_LENGTH = 2048;
+	static constexpr uint16_t FFT_LENGTH = 256;
 
 	float EstimatePeakFrequency(q15_t fft[FFT_LENGTH * 2], uint8_t peak_index);
 	void Run() override;
 	bool SensorSelectionUpdate(bool force = false);
 	void VehicleIMUStatusUpdate();
 
-	static constexpr int MAX_SENSOR_COUNT = 3;
+	static constexpr int MAX_SENSOR_COUNT = 4;
 
 	uORB::Publication<sensor_gyro_fft_s> _sensor_gyro_fft_pub{ORB_ID(sensor_gyro_fft)};
 
