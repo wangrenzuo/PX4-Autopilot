@@ -33,8 +33,7 @@
 
 #pragma once
 
-#include <sensor_corrections/SensorCorrections.hpp>
-
+#include <lib/sensor_calibration/Gyroscope.hpp>
 #include <lib/mathlib/math/Limits.hpp>
 #include <lib/matrix/matrix/math.hpp>
 #include <lib/mathlib/math/filter/LowPassFilter2pVector3f.hpp>
@@ -42,10 +41,11 @@
 #include <px4_platform_common/log.h>
 #include <px4_platform_common/module_params.h>
 #include <px4_platform_common/px4_config.h>
-#include <px4_platform_common/px4_work_queue/WorkItem.hpp>
+#include <px4_platform_common/px4_work_queue/ScheduledWorkItem.hpp>
 #include <uORB/Publication.hpp>
 #include <uORB/Subscription.hpp>
 #include <uORB/SubscriptionCallback.hpp>
+#include <uORB/topics/estimator_selector_status.h>
 #include <uORB/topics/estimator_sensor_bias.h>
 #include <uORB/topics/parameter_update.h>
 #include <uORB/topics/sensor_gyro.h>
@@ -56,10 +56,9 @@
 namespace sensors
 {
 
-class VehicleAngularVelocity : public ModuleParams, public px4::WorkItem
+class VehicleAngularVelocity : public ModuleParams, public px4::ScheduledWorkItem
 {
 public:
-
 	VehicleAngularVelocity();
 	~VehicleAngularVelocity() override;
 
@@ -76,22 +75,19 @@ private:
 	void SensorBiasUpdate(bool force = false);
 	bool SensorSelectionUpdate(bool force = false);
 
-	static constexpr int MAX_SENSOR_COUNT = 3;
+	static constexpr int MAX_SENSOR_COUNT = 4;
 
 	uORB::Publication<vehicle_angular_acceleration_s> _vehicle_angular_acceleration_pub{ORB_ID(vehicle_angular_acceleration)};
 	uORB::Publication<vehicle_angular_velocity_s> _vehicle_angular_velocity_pub{ORB_ID(vehicle_angular_velocity)};
 
+	uORB::Subscription _estimator_selector_status_sub{ORB_ID(estimator_selector_status)};
 	uORB::Subscription _estimator_sensor_bias_sub{ORB_ID(estimator_sensor_bias)};
 	uORB::Subscription _params_sub{ORB_ID(parameter_update)};
 
 	uORB::SubscriptionCallbackWorkItem _sensor_selection_sub{this, ORB_ID(sensor_selection)};
-	uORB::SubscriptionCallbackWorkItem _sensor_sub[MAX_SENSOR_COUNT] {
-		{this, ORB_ID(sensor_gyro), 0},
-		{this, ORB_ID(sensor_gyro), 1},
-		{this, ORB_ID(sensor_gyro), 2}
-	};
+	uORB::SubscriptionCallbackWorkItem _sensor_sub{this, ORB_ID(sensor_gyro)};
 
-	SensorCorrections _corrections;
+	calibration::Gyroscope _calibration{};
 
 	matrix::Vector3f _bias{0.f, 0.f, 0.f};
 
@@ -102,6 +98,8 @@ private:
 	hrt_abstime _last_publish{0};
 	static constexpr const float kInitialRateHz{1000.0f}; /**< sensor update rate used for initialization */
 	float _update_rate_hz{kInitialRateHz}; /**< current rate-controller loop update rate in [Hz] */
+
+	uint8_t _required_sample_updates{0}; /**< number or sensor publications required for configured rate */
 
 	// angular velocity filters
 	math::LowPassFilter2pVector3f _lp_filter_velocity{kInitialRateHz, 30.0f};

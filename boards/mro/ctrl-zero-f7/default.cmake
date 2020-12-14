@@ -17,7 +17,7 @@ px4_add_board(
 		#CONSOLE:/dev/ttyS4
 		#FRSKY:/dev/ttyS5
 	DRIVERS
-		adc
+		adc/board_adc
 		#barometer # all available barometer drivers
 		barometer/dps310
 		batt_smbus
@@ -29,7 +29,7 @@ px4_add_board(
 		gps
 		#heater
 		#imu # all available imu drivers
-		imu/bmi088
+		imu/bosch/bmi088
 		imu/invensense/icm20602
 		imu/invensense/icm20948
 		irlock
@@ -103,6 +103,7 @@ px4_add_board(
 		reboot
 		reflect
 		sd_bench
+		system_time
 		tests # tests and test runner
 		top
 		topic_listener

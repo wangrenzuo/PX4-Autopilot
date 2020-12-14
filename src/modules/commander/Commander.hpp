@@ -56,12 +56,14 @@
 
 // subscriptions
 #include <uORB/Subscription.hpp>
+#include <uORB/SubscriptionMultiArray.hpp>
 #include <uORB/topics/actuator_controls.h>
 #include <uORB/topics/airspeed.h>
 #include <uORB/topics/battery_status.h>
 #include <uORB/topics/cpuload.h>
 #include <uORB/topics/distance_sensor.h>
 #include <uORB/topics/esc_status.h>
+#include <uORB/topics/estimator_selector_status.h>
 #include <uORB/topics/estimator_status.h>
 #include <uORB/topics/geofence_result.h>
 #include <uORB/topics/iridiumsbd_status.h>
@@ -72,7 +74,6 @@
 #include <uORB/topics/parameter_update.h>
 #include <uORB/topics/power_button_state.h>
 #include <uORB/topics/safety.h>
-#include <uORB/topics/subsystem_info.h>
 #include <uORB/topics/system_power.h>
 #include <uORB/topics/telemetry_status.h>
 #include <uORB/topics/vehicle_acceleration.h>
@@ -113,7 +114,8 @@ public:
 
 private:
 
-	transition_result_t arm_disarm(bool arm, bool run_preflight_checks, orb_advert_t *mavlink_log_pub, const char *armedBy);
+	transition_result_t arm_disarm(bool arm, bool run_preflight_checks, orb_advert_t *mavlink_log_pub,
+				       arm_disarm_reason_t calling_reason);
 
 	void battery_status_check();
 
@@ -136,10 +138,10 @@ private:
 
 	void esc_status_check(const esc_status_s &esc_status);
 
-	void estimator_check();
+	void estimator_check(const vehicle_status_flags_s &status_flags);
 
 	bool handle_command(vehicle_status_s *status, const vehicle_command_s &cmd, actuator_armed_s *armed,
-			    uORB::PublicationQueued<vehicle_command_ack_s> &command_ack_pub);
+			    uORB::Publication<vehicle_command_ack_s> &command_ack_pub);
 
 	unsigned handle_command_motor_test(const vehicle_command_s &cmd);
 
@@ -154,6 +156,7 @@ private:
 
 	bool set_home_position();
 	bool set_home_position_alt_only();
+	void updateHomePositionYaw(float yaw);
 
 	void update_control_mode();
 
@@ -210,6 +213,7 @@ private:
 		(ParamBool<px4::params::COM_MOT_TEST_EN>) _param_com_mot_test_en,
 
 		(ParamFloat<px4::params::COM_KILL_DISARM>) _param_com_kill_disarm,
+		(ParamFloat<px4::params::COM_LKDOWN_TKO>) _param_com_lkdown_tko,
 
 		// Engine failure
 		(ParamFloat<px4::params::COM_EF_THROT>) _param_ef_throttle_thres,
@@ -221,6 +225,7 @@ private:
 		(ParamBool<px4::params::COM_ARM_MIS_REQ>) _param_arm_mission_required,
 		(ParamBool<px4::params::COM_ARM_AUTH_REQ>) _param_arm_auth_required,
 		(ParamBool<px4::params::COM_ARM_CHK_ESCS>) _param_escs_checks_required,
+		(ParamBool<px4::params::COM_REARM_GRACE>) _param_com_rearm_grace,
 
 		(ParamInt<px4::params::COM_FLIGHT_UUID>) _param_flight_uuid,
 		(ParamInt<px4::params::COM_TAKEOFF_ACT>) _param_takeoff_finished_action,
@@ -228,7 +233,7 @@ private:
 		(ParamInt<px4::params::COM_RC_OVERRIDE>) _param_rc_override,
 		(ParamInt<px4::params::COM_RC_IN_MODE>) _param_rc_in_off,
 		(ParamInt<px4::params::COM_RC_ARM_HYST>) _param_rc_arm_hyst,
-		(ParamFloat<px4::params::COM_RC_STICK_OV>) _param_min_stick_change,
+		(ParamFloat<px4::params::COM_RC_STICK_OV>) _param_com_rc_stick_ov,
 
 		(ParamInt<px4::params::COM_FLTMODE1>) _param_fltmode_1,
 		(ParamInt<px4::params::COM_FLTMODE2>) _param_fltmode_2,
@@ -303,6 +308,7 @@ private:
 
 	bool		_geofence_loiter_on{false};
 	bool		_geofence_rtl_on{false};
+	bool		_geofence_land_on{false};
 	bool		_geofence_warning_action_on{false};
 	bool		_geofence_violated_prev{false};
 
@@ -316,8 +322,6 @@ private:
 	hrt_abstime	_datalink_last_heartbeat_onboard_controller{0};
 	bool		_onboard_controller_lost{false};
 	bool		_avoidance_system_lost{false};
-	bool		_avoidance_system_status_change{false};
-	uint8_t		_datalink_last_status_avoidance_system{telemetry_status_s::MAV_STATE_UNINIT};
 
 	hrt_abstime	_high_latency_datalink_heartbeat{0};
 	hrt_abstime	_high_latency_datalink_lost{0};
@@ -343,12 +347,11 @@ private:
 
 	unsigned int	_leds_counter{0};
 
-	manual_control_setpoint_s	_sp_man{};		///< the current manual control setpoint
-	manual_control_setpoint_s	_last_sp_man{};	///< the manual control setpoint valid at the last mode switch
+	manual_control_setpoint_s	_manual_control_setpoint{};		///< the current manual control setpoint
+	manual_control_setpoint_s	_last_manual_control_setpoint{};	///< the manual control setpoint valid at the last mode switch
 	hrt_abstime	_rc_signal_lost_timestamp{0};		///< Time at which the RC reception was lost
 	int32_t		_flight_mode_slots[manual_control_setpoint_s::MODE_SLOT_NUM] {};
-	uint8_t		_last_sp_man_arm_switch{0};
-	float		_min_stick_change{};
+	uint8_t		_last_manual_control_setpoint_arm_switch{0};
 	uint32_t	_stick_off_counter{0};
 	uint32_t	_stick_on_counter{0};
 
@@ -357,10 +360,10 @@ private:
 	hrt_abstime	_timestamp_engine_healthy{0}; ///< absolute time when engine was healty
 
 	uint32_t	_counter{0};
+	uint8_t		_heading_reset_counter{0};
 
 	bool		_status_changed{true};
 	bool		_arm_tune_played{false};
-	bool		_was_landed{true};
 	bool		_was_armed{false};
 	bool		_failsafe_old{false};	///< check which state machines for changes, clear "changed" flag
 	bool		_have_taken_off_since_arming{false};
@@ -379,33 +382,23 @@ private:
 
 	// Subscriptions
 	uORB::Subscription					_actuator_controls_sub{ORB_ID_VEHICLE_ATTITUDE_CONTROLS};
-#if BOARD_NUMBER_BRICKS > 1
-	uORB::Subscription					_battery_subs[ORB_MULTI_MAX_INSTANCES] {
-		uORB::Subscription(ORB_ID(battery_status), 0),
-		uORB::Subscription(ORB_ID(battery_status), 1),
-		uORB::Subscription(ORB_ID(battery_status), 2),
-		uORB::Subscription(ORB_ID(battery_status), 3),
-	};
-#else
-	uORB::Subscription					_battery_subs[1] {
-		uORB::Subscription(ORB_ID(battery_status), 0)
-	};
-#endif
 	uORB::Subscription					_cmd_sub {ORB_ID(vehicle_command)};
 	uORB::Subscription					_cpuload_sub{ORB_ID(cpuload)};
-	uORB::Subscription					_sub_distance_sensor[ORB_MULTI_MAX_INSTANCES] {{ORB_ID(distance_sensor), 0}, {ORB_ID(distance_sensor), 1}, {ORB_ID(distance_sensor), 2}, {ORB_ID(distance_sensor), 3}}; /**< distance data received from onboard rangefinders */
 	uORB::Subscription					_esc_status_sub{ORB_ID(esc_status)};
+	uORB::Subscription                                      _estimator_selector_status_sub{ORB_ID(estimator_selector_status)};
 	uORB::Subscription					_geofence_result_sub{ORB_ID(geofence_result)};
 	uORB::Subscription					_iridiumsbd_status_sub{ORB_ID(iridiumsbd_status)};
 	uORB::Subscription					_land_detector_sub{ORB_ID(vehicle_land_detected)};
 	uORB::Subscription					_parameter_update_sub{ORB_ID(parameter_update)};
 	uORB::Subscription					_safety_sub{ORB_ID(safety)};
-	uORB::Subscription					_sp_man_sub{ORB_ID(manual_control_setpoint)};
-	uORB::Subscription					_subsys_sub{ORB_ID(subsystem_info)};
+	uORB::Subscription					_manual_control_setpoint_sub{ORB_ID(manual_control_setpoint)};
 	uORB::Subscription					_system_power_sub{ORB_ID(system_power)};
-	uORB::Subscription					_telemetry_status_sub{ORB_ID(telemetry_status)};
 	uORB::Subscription					_vehicle_acceleration_sub{ORB_ID(vehicle_acceleration)};
 	uORB::Subscription					_vtol_vehicle_status_sub{ORB_ID(vtol_vehicle_status)};
+
+	uORB::SubscriptionMultiArray<battery_status_s, battery_status_s::MAX_INSTANCES> _battery_status_subs{ORB_ID::battery_status};
+	uORB::SubscriptionMultiArray<distance_sensor_s>         _distance_sensor_subs{ORB_ID::distance_sensor};
+	uORB::SubscriptionMultiArray<telemetry_status_s>        _telemetry_status_subs{ORB_ID::telemetry_status};
 
 #if defined(BOARD_HAS_POWER_CONTROL)
 	uORB::Subscription					_power_button_state_sub {ORB_ID(power_button_state)};
@@ -429,7 +422,7 @@ private:
 
 	uORB::PublicationData<home_position_s>			_home_pub{ORB_ID(home_position)};
 
-	uORB::PublicationQueued<vehicle_command_ack_s>		_command_ack_pub{ORB_ID(vehicle_command_ack)};
+	uORB::Publication<vehicle_command_ack_s>		_command_ack_pub{ORB_ID(vehicle_command_ack)};
 
 };
 

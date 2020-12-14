@@ -14,7 +14,7 @@
 # @board bitcraze_crazyflie exclude
 #
 
-sh /etc/init.d/rc.mc_defaults
+. ${R}etc/init.d/rc.mc_defaults
 
 set MIXER quad_x
 set PWM_OUT 1234
@@ -54,7 +54,6 @@ then
 	param set PWM_MIN 1050
 
 	param set PWM_RATE 0
-	param set RC_FLT_CUTOFF 0
 	param set THR_MDL_FAC 0.3
 fi
 

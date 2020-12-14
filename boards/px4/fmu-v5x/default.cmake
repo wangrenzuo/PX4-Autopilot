@@ -17,7 +17,8 @@ px4_add_board(
 		TEL3:/dev/ttyS1
 		GPS2:/dev/ttyS7
 	DRIVERS
-		adc
+		adc/board_adc
+		adc/ads1115
 		barometer # all available barometer drivers
 		batt_smbus
 		camera_capture
@@ -31,7 +32,7 @@ px4_add_board(
 		imu/adis16448
 		imu/adis16477
 		imu/adis16497
-		imu/bmi088
+		imu/bosch/bmi088
 		imu/invensense/icm20602
 		imu/st/ism330dlc
 		irlock
@@ -43,6 +44,7 @@ px4_add_board(
 		optical_flow # all available optical flow drivers
 		#osd
 		pca9685
+		pca9685_pwm_out
 		power_monitor/ina226
 		#protocol_splitter
 		pwm_input
@@ -108,6 +110,7 @@ px4_add_board(
 		reboot
 		reflect
 		sd_bench
+		system_time
 		tests # tests and test runner
 		top
 		topic_listener

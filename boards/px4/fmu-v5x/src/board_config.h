@@ -116,6 +116,8 @@
 #define GPIO_I2C4_DRDY1_BMP388      /* PG5  */  (GPIO_INPUT|GPIO_FLOAT|GPIO_EXTI|GPIO_PORTG|GPIO_PIN5)
 #define GPIO_PG6                    /* PG6  */  (GPIO_INPUT|GPIO_PULLUP|GPIO_PORTG|GPIO_PIN6)
 
+#define PX4_I2C_BUS_MTD 4
+
 /*
  * ADC channels
  *
@@ -213,7 +215,7 @@
 #define GPIO_nARMED          /* PC12 */  (GPIO_OUTPUT|GPIO_PUSHPULL|GPIO_SPEED_2MHz|GPIO_OUTPUT_CLEAR|GPIO_PORTC|GPIO_PIN12)
 
 #if !defined(TRACE_PINS)
-#  define BOARD_INDICATE_ARMED_STATE(on_armed)  px4_arch_configgpio((on_armed) ? GPIO_nARMED : GPIO_nARMED_INIT)
+#  define BOARD_INDICATE_EXTERNAL_LOCKOUT_STATE(enabled)  px4_arch_configgpio((enabled) ? GPIO_nARMED : GPIO_nARMED_INIT)
 #endif
 /* PWM
  */
@@ -297,7 +299,8 @@
 /* Input Capture Channels. */
 #define INPUT_CAP1_TIMER                  5
 #define INPUT_CAP1_CHANNEL     /* T5C4 */ 4
-#define GPIO_INPUT_CAP1        /*  PI0 */ GPIO_TIM5_CH4_IN
+#define GPIO_INPUT_CAP1        /*  PI0 */ GPIO_TIM5_CH4IN
+#define BOARD_CAPTURE_GPIO /* PI0 */  (GPIO_INPUT|GPIO_FLOAT|GPIO_EXTI|GPIO_PORTI|GPIO_PIN0)
 
 /* PWM input driver. Use FMU AUX5 pins attached to timer4 channel 2 */
 #define PWMIN_TIMER                       4

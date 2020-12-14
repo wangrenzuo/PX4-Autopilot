@@ -240,7 +240,7 @@ public:
 	/**
 	 * Set the target throttle
 	 */
-	void		set_cruising_throttle(float throttle = -1.0f) { _mission_throttle = throttle; }
+	void		set_cruising_throttle(float throttle = NAN) { _mission_throttle = throttle; }
 
 	/**
 	 * Get the acceptance radius given the mission item preset radius
@@ -265,6 +265,7 @@ public:
 	orb_advert_t	*get_mavlink_log_pub() { return &_mavlink_log_pub; }
 
 	void		increment_mission_instance_count() { _mission_result.instance_count++; }
+	int		mission_instance_count() const { return _mission_result.instance_count; }
 
 	void 		set_mission_failure(const char *reason);
 
@@ -342,8 +343,8 @@ private:
 
 	orb_advert_t	_mavlink_log_pub{nullptr};	/**< the uORB advert to send messages over mavlink */
 
-	uORB::PublicationQueued<vehicle_command_ack_s>	_vehicle_cmd_ack_pub{ORB_ID(vehicle_command_ack)};
-	uORB::PublicationQueued<vehicle_command_s>	_vehicle_cmd_pub{ORB_ID(vehicle_command)};
+	uORB::Publication<vehicle_command_ack_s>	_vehicle_cmd_ack_pub{ORB_ID(vehicle_command_ack)};
+	uORB::Publication<vehicle_command_s>	_vehicle_cmd_pub{ORB_ID(vehicle_command)};
 
 	// Subscriptions
 	home_position_s					_home_pos{};		/**< home position for RTL */
@@ -393,7 +394,7 @@ private:
 
 	float _mission_cruising_speed_mc{-1.0f};
 	float _mission_cruising_speed_fw{-1.0f};
-	float _mission_throttle{-1.0f};
+	float _mission_throttle{NAN};
 
 	// update subscriptions
 	void		params_update();
