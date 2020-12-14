@@ -62,7 +62,7 @@ public:
 	 */
 	inline float apply(float sample)
 	{
-		// do the filtering
+		// Direct Form II implementation
 		float delay_element_0 = sample - _delay_element_1 * _a1 - _delay_element_2 * _a2;
 
 		if (!PX4_ISFINITE(delay_element_0)) {
