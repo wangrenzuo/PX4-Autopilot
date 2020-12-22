@@ -47,6 +47,7 @@
 #include <uORB/SubscriptionCallback.hpp>
 #include <uORB/topics/battery_status.h>
 #include <uORB/topics/parameter_update.h>
+#include <uORB/topics/sensor_gps.h>
 
 #include "o1heap/o1heap.h"
 
@@ -123,6 +124,7 @@ private:
 	CanardRxSubscription _heartbeat_subscription;
 	CanardRxSubscription _pnp_v1_subscription;
 	CanardRxSubscription _drone_srv_battery_subscription;
+	CanardRxSubscription _drone_srv_gps_subscription;
 	CanardRxSubscription _register_access_subscription;
 	CanardRxSubscription _register_list_subscription;
 
@@ -139,7 +141,9 @@ private:
 	hrt_abstime _uavcan_node_heartbeat_last{0};
 	CanardTransferID _uavcan_node_heartbeat_transfer_id{0};
     
-    const uint16_t test_port_id = 1234;
+    //Temporary hardcoded port IDs
+    const uint16_t bms_port_id = 1234;
+    const uint16_t gps_port_id = 1235;
     
 	CanardTransferID _uavcan_pnp_nodeidallocation_v1_transfer_id{0};
     hrt_abstime _uavcan_pnp_nodeidallocation_last{0};

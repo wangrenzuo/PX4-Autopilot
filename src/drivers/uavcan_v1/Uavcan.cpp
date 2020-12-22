@@ -182,10 +182,18 @@ void UavcanNode::Run()
 
                 canardRxSubscribe(&_canard_instance,
 							  CanardTransferKindMessage,
-							  test_port_id,
+							  bms_port_id,
 							  reg_drone_srv_battery_Status_0_1_EXTENT_BYTES_,
 							  CANARD_DEFAULT_TRANSFER_ID_TIMEOUT_USEC,
 							  &_drone_srv_battery_subscription);
+                
+                canardRxSubscribe(&_canard_instance, //Temporory GPS message DSDL not defined yet
+							  CanardTransferKindMessage,
+							  gps_port_id,
+							  sizeof(struct sensor_gps_s),
+							  CANARD_DEFAULT_TRANSFER_ID_TIMEOUT_USEC,
+							  &_drone_srv_gps_subscription);
+
 
 				_initialized = true;
 			}
@@ -375,12 +383,9 @@ void UavcanNode::Run()
                 uavcan_register_List_Response_1_0_deserialize_(&msg, (const uint8_t*)receive.payload, &register_in_size_bits);
                 
                 
-                
-                
-                
-                if(strncmp((char*)msg.name.name.elements, "uavcan.pub.battery_status.id", msg.name.name.count) == 0) { //Battery status publisher
+                if(strncmp((char*)msg.name.name.elements, "uavcan.pub.gps.id", msg.name.name.count) == 0) { //Demo GPS status publisher
                     _node_register_setup = CANARD_NODE_ID_UNSET;
-                    PX4_INFO("NodeID %i battery_status publisher set PortID to %i", receive.remote_node_id, test_port_id);
+                    PX4_INFO("NodeID %i GPS publisher set PortID to %i", receive.remote_node_id, gps_port_id);
                     _node_register_last_received_index++;
                     
                     uavcan_register_Access_Request_1_0 request_msg;
@@ -388,7 +393,42 @@ void UavcanNode::Run()
                     
                     uavcan_register_Value_1_0_select_natural16_(&request_msg.value);
                     request_msg.value.natural16.value.count = 1;
-                    request_msg.value.natural16.value.elements[0] = test_port_id;
+                    request_msg.value.natural16.value.elements[0] = gps_port_id;
+                    
+                    
+                    uint8_t request_payload_buffer[uavcan_register_Access_Request_1_0_SERIALIZATION_BUFFER_SIZE_BYTES_];
+                    
+                    CanardTransfer transfer = {
+                        .timestamp_usec = hrt_absolute_time(),      // Zero if transmission deadline is not limited.
+                        .priority       = CanardPriorityNominal,
+                        .transfer_kind  = CanardTransferKindRequest,
+                        .port_id        = uavcan_register_Access_1_0_FIXED_PORT_ID_,                // This is the subject-ID.
+                        .remote_node_id = receive.remote_node_id,       // Messages cannot be unicast, so use UNSET.
+                        .transfer_id    = _uavcan_register_access_request_transfer_id,
+                        .payload_size   = uavcan_register_Access_Request_1_0_SERIALIZATION_BUFFER_SIZE_BYTES_,
+                        .payload        = &request_payload_buffer,
+                    };
+
+                    result = uavcan_register_Access_Request_1_0_serialize_(&request_msg, request_payload_buffer, &transfer.payload_size);
+
+                    if(result == 0) {
+                        // set the data ready in the buffer and chop if needed 
+                        ++_uavcan_register_access_request_transfer_id;  // The transfer-ID shall be incremented after every transmission on this subject.
+                        result = canardTxPush(&_canard_instance, &transfer);
+                    }
+                }
+                
+                if(strncmp((char*)msg.name.name.elements, "uavcan.pub.battery_status.id", msg.name.name.count) == 0) { //Battery status publisher
+                    _node_register_setup = CANARD_NODE_ID_UNSET;
+                    PX4_INFO("NodeID %i battery_status publisher set PortID to %i", receive.remote_node_id, bms_port_id);
+                    _node_register_last_received_index++;
+                    
+                    uavcan_register_Access_Request_1_0 request_msg;
+                    memcpy(&request_msg.name, &msg.name, sizeof(uavcan_register_Name_1_0));
+                    
+                    uavcan_register_Value_1_0_select_natural16_(&request_msg.value);
+                    request_msg.value.natural16.value.count = 1;
+                    request_msg.value.natural16.value.elements[0] = bms_port_id;
                     
                     
                     uint8_t request_payload_buffer[uavcan_register_Access_Request_1_0_SERIALIZATION_BUFFER_SIZE_BYTES_];
@@ -414,8 +454,25 @@ void UavcanNode::Run()
                 }
                 
                 
-			} else if (receive.port_id == test_port_id) {
+			} else if (receive.port_id == bms_port_id) {
 				PX4_INFO("NodeID %i Battery Status msg", receive.remote_node_id);
+                //TODO deserialize
+                /*
+
+				battery_status_s battery_status{};
+				battery_status.id = bms_status.battery_id;
+                                battery_status.voltage_v = bms_status.voltage;
+				//battery_status.remaining = bms_status.remaining_capacity;
+				battery_status.timestamp = hrt_absolute_time();
+				_battery_status_pub.publish(battery_status);*/
+			} else if (receive.port_id == gps_port_id) {
+				PX4_INFO("NodeID %i GPS sensor msg", receive.remote_node_id);
+                
+                
+                sensor_gps_s* gps_msg = (sensor_gps_s*)receive.payload;
+                
+                print_message(*gps_msg);
+                
                 //TODO deserialize
                 
                 /*
@@ -431,7 +488,7 @@ void UavcanNode::Run()
 			// Deallocate the dynamic memory afterwards.
 			_canard_instance.memory_free(&_canard_instance, (void *)receive.payload);
 		} else {
-                PX4_INFO("RX canard %d\r\n", result);
+                //PX4_INFO("RX canard %d\r\n", result);
             }
 	}
 
