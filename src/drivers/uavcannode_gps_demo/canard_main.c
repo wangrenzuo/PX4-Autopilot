@@ -65,7 +65,6 @@
 
 #include "mavcan/pnp.h"
 #include "mavcan/registerinterface.h"
-
 /****************************************************************************
  * Pre-processor Definitions
  ****************************************************************************/
@@ -93,7 +92,8 @@ static uint8_t unique_id[UNIQUE_ID_LENGTH_BYTES] = { //FIXME real HW ID
 
 static bool g_canard_daemon_started;
 
-static int16_t gps_port_id = -1;
+static int16_t gps_fix_port_id = -1;
+static int16_t gps_aux_port_id = -1;
 
 struct pollfd fd;
 
@@ -104,21 +104,41 @@ struct pollfd fd;
 
 //TODO move this to a seperate file probably
 
-int32_t set_gps_port_id(uavcan_register_Value_1_0* value){
+int32_t set_gps_fix_port_id(uavcan_register_Value_1_0* value){
     if(uavcan_register_Value_1_0_is_natural16_(value) && value->natural16.value.count == 1) { // Natural 16
         //TODO check validity
-        printf("Master: set portID to %i\n", value->natural16.value.elements[0]);
-        gps_port_id = value->natural16.value.elements[0];
+        printf("Master: set FIX portID to %i\n", value->natural16.value.elements[0]);
+        gps_fix_port_id = value->natural16.value.elements[0];
         return 0;
     }
     return -UAVCAN_REGISTER_ERROR_SERIALIZATION;
 }
 
-uavcan_register_Value_1_0 get_gps_port_id() {
+uavcan_register_Value_1_0 get_gps_fix_port_id() {
 	void* dataReturn;
     uavcan_register_Value_1_0 value;
     
-    value.natural16.value.elements[0] = gps_port_id;
+    value.natural16.value.elements[0] = gps_fix_port_id;
+    value.natural16.value.count = 1;
+    value._tag_ = 10; // TODO does nunavut generate ENUM/defines for this??
+    return value;
+}
+
+int32_t set_gps_aux_port_id(uavcan_register_Value_1_0* value){
+    if(uavcan_register_Value_1_0_is_natural16_(value) && value->natural16.value.count == 1) { // Natural 16
+        //TODO check validity
+        printf("Master: set AUX portID to %i\n", value->natural16.value.elements[0]);
+        gps_fix_port_id = value->natural16.value.elements[0];
+        return 0;
+    }
+    return -UAVCAN_REGISTER_ERROR_SERIALIZATION;
+}
+
+uavcan_register_Value_1_0 get_gps_aux_port_id() {
+	void* dataReturn;
+    uavcan_register_Value_1_0 value;
+    
+    value.natural16.value.elements[0] = gps_aux_port_id;
     value.natural16.value.count = 1;
     value._tag_ = 10; // TODO does nunavut generate ENUM/defines for this??
     return value;
@@ -302,7 +322,8 @@ static int canard_daemon(int argc, char *argv[])
     /* Init UAVCAN register interfaces */
     uavcan_node_GetInfo_Response_1_0 node_information; // TODO ADD INFO
     uavcan_register_interface_init(&ins, &node_information);
-    uavcan_register_interface_add_entry("gps",set_gps_port_id,get_gps_port_id);
+    uavcan_register_interface_add_entry("gnss_fix",set_gps_fix_port_id,get_gps_fix_port_id);
+    uavcan_register_interface_add_entry("gnss_aux",set_gps_aux_port_id,get_gps_aux_port_id);
     
     initPNPAllocatee(&ins, unique_id);
 
@@ -335,7 +356,7 @@ static int canard_daemon(int argc, char *argv[])
 	       ins.mtu_bytes);
 
 	/* Initialize uORB publishers & subscribers */
-	uorbConverterInit(&ins, &gps_port_id);
+	uorbConverterInit(&ins, &gps_fix_port_id, &gps_aux_port_id);
 
 	g_canard_daemon_started = true;
 	uint64_t next_1hz_service_at = getMonotonicTimestampUSec();

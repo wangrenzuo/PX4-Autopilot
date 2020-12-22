@@ -29,7 +29,7 @@
 #define TOPIC_SIZE                               sizeof(struct sensor_gps_s)
 
 
-void uorbConverterInit(CanardInstance *ins, int16_t *port_id);
+void uorbConverterInit(CanardInstance *ins, int16_t *fix_port_id, int16_t *aux_port_id);
 
 void uorbProcessSub(int timeout_msec);
 
