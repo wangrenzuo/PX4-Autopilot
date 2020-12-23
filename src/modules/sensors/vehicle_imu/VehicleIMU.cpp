@@ -142,7 +142,7 @@ void VehicleIMU::ParametersUpdate(bool force)
 	}
 }
 
-bool VehicleIMU::UpdateIntervalAverage(IntervalAverage &intavg, const hrt_abstime &timestamp_sample)
+bool VehicleIMU::UpdateIntervalAverage(IntervalAverage &intavg, const hrt_abstime &timestamp_sample, uint8_t samples)
 {
 	bool updated = false;
 
@@ -162,6 +162,7 @@ bool VehicleIMU::UpdateIntervalAverage(IntervalAverage &intavg, const hrt_abstim
 
 		intavg.interval_sum += interval_us;
 		intavg.interval_count++;
+		intavg.interval_sum_samples += samples;
 
 		// periodically calculate sensor update rate
 		if (intavg.interval_count > 10000 || ((intavg.update_interval <= FLT_EPSILON) && intavg.interval_count > 100)) {
@@ -173,6 +174,7 @@ bool VehicleIMU::UpdateIntervalAverage(IntervalAverage &intavg, const hrt_abstim
 				if ((fabsf(intavg.update_interval - sample_interval_avg) / intavg.update_interval) > 0.005f) {
 
 					intavg.update_interval = sample_interval_avg;
+					intavg.average_samples = intavg.interval_sum_samples / intavg.interval_count;
 					updated = true;
 				}
 			}
@@ -180,12 +182,14 @@ bool VehicleIMU::UpdateIntervalAverage(IntervalAverage &intavg, const hrt_abstim
 			// reset sample interval accumulator
 			intavg.interval_sum = 0.f;
 			intavg.interval_count = 0.f;
+			intavg.interval_sum_samples = 0;
 		}
 
 	} else {
 		// reset
 		intavg.interval_sum = 0.f;
 		intavg.interval_count = 0.f;
+		intavg.interval_sum_samples = 0;
 	}
 
 	intavg.timestamp_sample_last = timestamp_sample;
@@ -223,10 +227,10 @@ void VehicleIMU::Run()
 
 		} else {
 			// collect sample interval average for filters
-			if (!_intervals_configured && UpdateIntervalAverage(_gyro_interval, gyro.timestamp_sample)) {
+			if (!_intervals_configured && UpdateIntervalAverage(_gyro_interval, gyro.timestamp_sample, gyro.samples)) {
 				update_integrator_config = true;
 				publish_status = true;
-				_status.gyro_rate_hz = roundf(1e6f / _gyro_interval.update_interval);
+				_status.gyro_rate_hz = (1e6f / _gyro_interval.update_interval) * _gyro_interval.average_samples;
 			}
 		}
 
@@ -269,10 +273,10 @@ void VehicleIMU::Run()
 
 		} else {
 			// collect sample interval average for filters
-			if (!_intervals_configured && UpdateIntervalAverage(_accel_interval, accel.timestamp_sample)) {
+			if (!_intervals_configured && UpdateIntervalAverage(_accel_interval, accel.timestamp_sample, accel.samples)) {
 				update_integrator_config = true;
 				publish_status = true;
-				_status.accel_rate_hz = roundf(1e6f / _accel_interval.update_interval);
+				_status.accel_rate_hz = (1e6f / _accel_interval.update_interval) * _accel_interval.average_samples;
 			}
 		}
 

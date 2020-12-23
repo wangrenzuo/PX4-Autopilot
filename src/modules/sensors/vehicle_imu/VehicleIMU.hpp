@@ -76,11 +76,14 @@ private:
 	struct IntervalAverage {
 		hrt_abstime timestamp_sample_last{0};
 		float interval_sum{0.f};
+		int interval_sum_samples{0};
 		float interval_count{0.f};
 		float update_interval{0.f};
+
+		uint8_t average_samples{0};
 	};
 
-	bool UpdateIntervalAverage(IntervalAverage &intavg, const hrt_abstime &timestamp_sample);
+	bool UpdateIntervalAverage(IntervalAverage &intavg, const hrt_abstime &timestamp_sample, uint8_t samples = 1);
 	void UpdateIntegratorConfiguration();
 	void UpdateGyroVibrationMetrics(const matrix::Vector3f &delta_angle);
 	void UpdateAccelVibrationMetrics(const matrix::Vector3f &delta_velocity);

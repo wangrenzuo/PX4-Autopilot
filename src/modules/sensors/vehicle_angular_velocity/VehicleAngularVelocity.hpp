@@ -78,9 +78,6 @@ private:
 
 	float GetSampleRateForGyro(uint32_t device_id);
 
-	void IntervalAverageReset();
-	void IntervalAverageUpdate(const hrt_abstime &timestamp, int count = 1);
-
 	void ParametersUpdate(bool force = false);
 	void SensorBiasUpdate(bool force = false);
 	bool SensorSelectionUpdate(bool force = false);
@@ -118,10 +115,13 @@ private:
 
 	uint8_t _required_sample_updates{0}; /**< number or sensor publications required for configured rate */
 
+	static constexpr int MAX_NUM_FFT_PEAKS = sizeof(sensor_gyro_fft_s::peak_frequencies_x) / sizeof(
+				sensor_gyro_fft_s::peak_frequencies_x[0]);
+
 	// angular velocity filters
 	math::LowPassFilter2pArray _lp_filter_velocity[3] {{kInitialRateHz, 30.0f}, {kInitialRateHz, 30.0f}, {kInitialRateHz, 30.0f}};
 	math::NotchFilterArray<float> _notch_filter_velocity[3] {};
-	math::NotchFilterArray<float> _dynamic_notch_filter[4][3] {};
+	math::NotchFilterArray<float> _dynamic_notch_filter[MAX_NUM_FFT_PEAKS][3] {};
 
 	// angular acceleration filter
 	math::LowPassFilter2p _lp_filter_acceleration[3] {{kInitialRateHz, 30.0f}, {kInitialRateHz, 30.0f}, {kInitialRateHz, 30.0f}};
@@ -129,23 +129,16 @@ private:
 	float _filter_sample_rate{kInitialRateHz};
 
 	float _sensor_sample_rate[MAX_SENSOR_COUNT] {NAN, NAN, NAN, NAN};
-	float _sensor_fifo_sample_rate[MAX_SENSOR_COUNT] {NAN, NAN, NAN, NAN};
 
 	uint32_t _selected_sensor_device_id{0};
 	uint8_t _selected_sensor_sub_index{0};
 
 	hrt_abstime _timestamp_interval_last{0};
-	float _interval_sum{0.f};
-	float _interval_count{0.f};
-
-	unsigned _sensor_last_generation{0};
 
 	bool _sample_rate_determined{false};
 	bool _reset_filters{false};
 
 	bool _fifo_available{false};
-
-	perf_counter_t _gyro_fft_notch_frequency_update_perf{perf_alloc(PC_COUNT, MODULE_NAME": gyro FFT notch update")};
 
 	DEFINE_PARAMETERS(
 		(ParamFloat<px4::params::IMU_GYRO_CUTOFF>) _param_imu_gyro_cutoff,

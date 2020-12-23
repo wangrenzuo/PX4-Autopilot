@@ -95,6 +95,7 @@ bool GyroFFT::SensorSelectionUpdate(bool force)
 							if (imu_status_sub.copy(&vehicle_imu_status)) {
 								if (vehicle_imu_status.gyro_device_id == sensor_selection.gyro_device_id) {
 									_vehicle_imu_status_sub.ChangeInstance(imu_status);
+									_selected_sensor_device_id = sensor_selection.gyro_device_id;
 									return true;
 								}
 							}
@@ -115,11 +116,13 @@ bool GyroFFT::SensorSelectionUpdate(bool force)
 
 void GyroFFT::VehicleIMUStatusUpdate()
 {
-	// TODO: device id
 	vehicle_imu_status_s vehicle_imu_status;
 
 	if (_vehicle_imu_status_sub.update(&vehicle_imu_status)) {
-		if ((vehicle_imu_status.gyro_rate_hz > 0) && (fabsf(vehicle_imu_status.gyro_rate_hz - _gyro_sample_rate_hz) > 1.f)) {
+		if ((vehicle_imu_status.gyro_device_id == _selected_sensor_device_id)
+		    && (vehicle_imu_status.gyro_rate_hz > 0)
+		    && (fabsf(vehicle_imu_status.gyro_rate_hz - _gyro_sample_rate_hz) > 1.f)) {
+
 			_gyro_sample_rate_hz = vehicle_imu_status.gyro_rate_hz;
 		}
 	}
@@ -161,15 +164,6 @@ float GyroFFT::EstimatePeakFrequency(q15_t fft[FFT_LENGTH * 2], uint8_t peak_ind
 	return peak_freq_adjusted;
 }
 
-static int float_cmp(const void *elem1, const void *elem2)
-{
-	if (*(const float *)elem1 < * (const float *)elem2) {
-		return -1;
-	}
-
-	return *(const float *)elem1 > *(const float *)elem2;
-}
-
 void GyroFFT::Run()
 {
 	if (should_exit()) {
@@ -194,6 +188,7 @@ void GyroFFT::Run()
 	}
 
 	SensorSelectionUpdate();
+	VehicleIMUStatusUpdate();
 
 	const float resolution_hz = _gyro_sample_rate_hz / FFT_LENGTH;
 
@@ -246,7 +241,6 @@ void GyroFFT::Run()
 
 				// if we have enough samples begin processing, but only one FFT per cycle
 				if ((buffer_index >= FFT_LENGTH) && !fft_updated) {
-
 					arm_mult_q15(_gyro_data_buffer[axis], _hanning_window, _fft_input_buffer, FFT_LENGTH);
 
 					perf_begin(_fft_perf);
@@ -256,10 +250,7 @@ void GyroFFT::Run()
 
 					static constexpr uint16_t MIN_SNR = 10; // TODO:
 
-					uint32_t max_peak_magnitude = 0;
-					uint8_t max_peak_index = 0;
-
-					static constexpr int MAX_NUM_PEAKS = 4;
+					bool peaks_detected = false;
 					uint32_t peaks_magnitude[MAX_NUM_PEAKS] {};
 					uint8_t peak_index[MAX_NUM_PEAKS] {};
 
@@ -279,17 +270,11 @@ void GyroFFT::Run()
 							const uint32_t fft_magnitude_squared = real * real + complex * complex;
 
 							if (fft_magnitude_squared > MIN_SNR) {
-
-								if (fft_magnitude_squared > max_peak_magnitude) {
-									max_peak_magnitude = fft_magnitude_squared;
-									max_peak_index = bucket_index;
-								}
-
 								for (int i = 0; i < MAX_NUM_PEAKS; i++) {
 									if (fft_magnitude_squared > peaks_magnitude[i]) {
 										peaks_magnitude[i] = fft_magnitude_squared;
 										peak_index[i] = bucket_index;
-										publish = true;
+										peaks_detected = true;
 										break;
 									}
 								}
@@ -297,12 +282,7 @@ void GyroFFT::Run()
 						}
 					}
 
-					if (max_peak_index > 0) {
-						_sensor_gyro_fft.peak_frequency[axis] = _median_filter[axis].apply(EstimatePeakFrequency(_fft_outupt_buffer,
-											max_peak_index));
-					}
-
-					if (publish) {
+					if (peaks_detected) {
 						float *peak_frequencies;
 
 						switch (axis) {
@@ -319,27 +299,27 @@ void GyroFFT::Run()
 							break;
 						}
 
-						int peaks_found = 0;
+						int num_peaks_found = 0;
 
 						for (int i = 0; i < MAX_NUM_PEAKS; i++) {
 							if ((peak_index[i] > 0) && (peak_index[i] < FFT_LENGTH) && (peaks_magnitude[i] > 0)) {
 								const float freq = EstimatePeakFrequency(_fft_outupt_buffer, peak_index[i]);
 
 								if (freq >= _param_imu_gyro_fft_min.get() && freq <= _param_imu_gyro_fft_max.get()) {
-									peak_frequencies[peaks_found] = freq;
-									peaks_found++;
+
+									if (fabsf(peak_frequencies[num_peaks_found] - freq) > 0.1f) {
+										publish = true;
+									}
+
+									peak_frequencies[num_peaks_found] = freq;
+									num_peaks_found++;
 								}
 							}
 						}
 
 						// mark remaining slots empty
-						for (int i = peaks_found; i < MAX_NUM_PEAKS; i++) {
+						for (int i = num_peaks_found; i < MAX_NUM_PEAKS; i++) {
 							peak_frequencies[i] = NAN;
-						}
-
-						// publish in sorted order for convenience
-						if (peaks_found > 0) {
-							qsort(peak_frequencies, peaks_found, sizeof(float), float_cmp);
 						}
 					}
 
@@ -392,6 +372,7 @@ int GyroFFT::task_spawn(int argc, char *argv[])
 
 int GyroFFT::print_status()
 {
+	PX4_INFO("gyro sample rate: %.3f Hz", (double)_gyro_sample_rate_hz);
 	perf_print_counter(_cycle_perf);
 	perf_print_counter(_cycle_interval_perf);
 	perf_print_counter(_fft_perf);

@@ -84,6 +84,9 @@ private:
 
 	static constexpr int MAX_SENSOR_COUNT = 4;
 
+	static constexpr int MAX_NUM_PEAKS = sizeof(sensor_gyro_fft_s::peak_frequencies_x) / sizeof(
+			sensor_gyro_fft_s::peak_frequencies_x[0]);
+
 	uORB::Publication<sensor_gyro_fft_s> _sensor_gyro_fft_pub{ORB_ID(sensor_gyro_fft)};
 
 	uORB::Subscription _parameter_update_sub{ORB_ID(parameter_update)};
@@ -111,8 +114,6 @@ private:
 	int _fft_buffer_index[3] {};
 
 	unsigned _gyro_last_generation{0};
-
-	math::MedianFilter<float, 3> _median_filter[3] {};
 
 	sensor_gyro_fft_s _sensor_gyro_fft{};
 

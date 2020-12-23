@@ -116,11 +116,11 @@ void PX4Gyroscope::updateFIFO(sensor_gyro_fifo_s &sample)
 		const float z = integral(2) / (float)N;
 
 		// publish
-		Publish(sample.timestamp_sample, x, y, z);
+		Publish(sample.timestamp_sample, x, y, z, N);
 	}
 }
 
-void PX4Gyroscope::Publish(const hrt_abstime &timestamp_sample, float x, float y, float z)
+void PX4Gyroscope::Publish(const hrt_abstime &timestamp_sample, float x, float y, float z, uint8_t samples)
 {
 	// Apply rotation (before scaling)
 	rotate_3f(_rotation, x, y, z);
@@ -131,6 +131,7 @@ void PX4Gyroscope::Publish(const hrt_abstime &timestamp_sample, float x, float y
 	report.device_id = _device_id;
 	report.temperature = _temperature;
 	report.error_count = _error_count;
+	report.samples = samples;
 	report.x = x * _scale;
 	report.y = y * _scale;
 	report.z = z * _scale;
