@@ -23,13 +23,7 @@
  * Pre-processor Definitions
  ****************************************************************************/
 
-
-/* Temporary topic to test UAVCAN */
-
-#define TOPIC_SIZE                               sizeof(struct sensor_gps_s)
-
-
-void uorbConverterInit(CanardInstance *ins, int16_t *fix_port_id, int16_t *aux_port_id);
+void uorbConverterInit(CanardInstance *ins, int16_t *raw_uorb_port_id, int16_t *fix_port_id, int16_t *aux_port_id);
 
 void uorbProcessSub(int timeout_msec);
 

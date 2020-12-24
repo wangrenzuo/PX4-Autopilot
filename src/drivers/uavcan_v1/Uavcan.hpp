@@ -132,6 +132,7 @@ private:
 	uORB::Subscription _parameter_update_sub{ORB_ID(parameter_update)};
 
 	uORB::Publication<battery_status_s> _battery_status_pub{ORB_ID(battery_status)};
+	uORB::Publication<sensor_gps_s> _sensor_gps_pub{ORB_ID(sensor_gps)};
 
 	perf_counter_t _cycle_perf{perf_alloc(PC_ELAPSED, MODULE_NAME": cycle time")};
 	perf_counter_t _interval_perf{perf_alloc(PC_INTERVAL, MODULE_NAME": cycle interval")};
@@ -140,22 +141,22 @@ private:
 	uint8_t _uavcan_node_heartbeat_buffer[uavcan_node_Heartbeat_1_0_EXTENT_BYTES_];
 	hrt_abstime _uavcan_node_heartbeat_last{0};
 	CanardTransferID _uavcan_node_heartbeat_transfer_id{0};
-    
-    //Temporary hardcoded port IDs
-    const uint16_t bms_port_id = 1234;
-    const uint16_t gps_port_id = 1235;
-    
+
+	//Temporary hardcoded port IDs
+	const uint16_t bms_port_id = 1234;
+	const uint16_t gps_port_id = 1235;
+
 	CanardTransferID _uavcan_pnp_nodeidallocation_v1_transfer_id{0};
-    hrt_abstime _uavcan_pnp_nodeidallocation_last{0};
-    
+	hrt_abstime _uavcan_pnp_nodeidallocation_last{0};
+
 	CanardTransferID _uavcan_register_list_request_transfer_id{0};
 	CanardTransferID _uavcan_register_access_request_transfer_id{0};
-    //Register interface NodeID TODO MVP right have to make a queue
-    uint8_t _node_register_setup = CANARD_NODE_ID_UNSET;
-    int32_t _node_register_request_index = 0;
-    int32_t _node_register_last_received_index = -1;
-    
-    // regulated::drone::sensor::BMSStatus_1_0
+	//Register interface NodeID TODO MVP right have to make a queue
+	uint8_t _node_register_setup = CANARD_NODE_ID_UNSET;
+	int32_t _node_register_request_index = 0;
+	int32_t _node_register_last_received_index = -1;
+
+	// regulated::drone::sensor::BMSStatus_1_0
 	uint8_t _regulated_drone_sensor_bmsstatus_buffer[reg_drone_srv_battery_Status_0_1_EXTENT_BYTES_];
 	hrt_abstime _regulated_drone_sensor_bmsstatus_last{0};
 	CanardTransferID _regulated_drone_sensor_bmsstatus_transfer_id{0};

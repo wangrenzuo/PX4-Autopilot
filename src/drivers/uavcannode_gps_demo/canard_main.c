@@ -92,6 +92,7 @@ static uint8_t unique_id[UNIQUE_ID_LENGTH_BYTES] = { //FIXME real HW ID
 
 static bool g_canard_daemon_started;
 
+static int16_t gps_uorb_port_id = -1;
 static int16_t gps_fix_port_id = -1;
 static int16_t gps_aux_port_id = -1;
 
@@ -104,44 +105,73 @@ struct pollfd fd;
 
 //TODO move this to a seperate file probably
 
-int32_t set_gps_fix_port_id(uavcan_register_Value_1_0* value){
-    if(uavcan_register_Value_1_0_is_natural16_(value) && value->natural16.value.count == 1) { // Natural 16
-        //TODO check validity
-        printf("Master: set FIX portID to %i\n", value->natural16.value.elements[0]);
-        gps_fix_port_id = value->natural16.value.elements[0];
-        return 0;
-    }
-    return -UAVCAN_REGISTER_ERROR_SERIALIZATION;
+int32_t set_gps_uorb_port_id(uavcan_register_Value_1_0 *value)
+{
+	if (uavcan_register_Value_1_0_is_natural16_(value) && value->natural16.value.count == 1) { // Natural 16
+		//TODO check validity
+		printf("Master: set uORB portID to %i\n", value->natural16.value.elements[0]);
+		gps_uorb_port_id = value->natural16.value.elements[0];
+		return 0;
+	}
+
+	return -UAVCAN_REGISTER_ERROR_SERIALIZATION;
 }
 
-uavcan_register_Value_1_0 get_gps_fix_port_id() {
-	void* dataReturn;
-    uavcan_register_Value_1_0 value;
-    
-    value.natural16.value.elements[0] = gps_fix_port_id;
-    value.natural16.value.count = 1;
-    value._tag_ = 10; // TODO does nunavut generate ENUM/defines for this??
-    return value;
+uavcan_register_Value_1_0 get_gps_uorb_port_id()
+{
+	void *dataReturn;
+	uavcan_register_Value_1_0 value;
+
+	value.natural16.value.elements[0] = gps_uorb_port_id;
+	value.natural16.value.count = 1;
+	value._tag_ = 10; // TODO does nunavut generate ENUM/defines for this??
+	return value;
 }
 
-int32_t set_gps_aux_port_id(uavcan_register_Value_1_0* value){
-    if(uavcan_register_Value_1_0_is_natural16_(value) && value->natural16.value.count == 1) { // Natural 16
-        //TODO check validity
-        printf("Master: set AUX portID to %i\n", value->natural16.value.elements[0]);
-        gps_fix_port_id = value->natural16.value.elements[0];
-        return 0;
-    }
-    return -UAVCAN_REGISTER_ERROR_SERIALIZATION;
+int32_t set_gps_fix_port_id(uavcan_register_Value_1_0 *value)
+{
+	if (uavcan_register_Value_1_0_is_natural16_(value) && value->natural16.value.count == 1) { // Natural 16
+		//TODO check validity
+		printf("Master: set FIX portID to %i\n", value->natural16.value.elements[0]);
+		gps_fix_port_id = value->natural16.value.elements[0];
+		return 0;
+	}
+
+	return -UAVCAN_REGISTER_ERROR_SERIALIZATION;
 }
 
-uavcan_register_Value_1_0 get_gps_aux_port_id() {
-	void* dataReturn;
-    uavcan_register_Value_1_0 value;
-    
-    value.natural16.value.elements[0] = gps_aux_port_id;
-    value.natural16.value.count = 1;
-    value._tag_ = 10; // TODO does nunavut generate ENUM/defines for this??
-    return value;
+uavcan_register_Value_1_0 get_gps_fix_port_id()
+{
+	void *dataReturn;
+	uavcan_register_Value_1_0 value;
+
+	value.natural16.value.elements[0] = gps_fix_port_id;
+	value.natural16.value.count = 1;
+	value._tag_ = 10; // TODO does nunavut generate ENUM/defines for this??
+	return value;
+}
+
+int32_t set_gps_aux_port_id(uavcan_register_Value_1_0 *value)
+{
+	if (uavcan_register_Value_1_0_is_natural16_(value) && value->natural16.value.count == 1) { // Natural 16
+		//TODO check validity
+		printf("Master: set AUX portID to %i\n", value->natural16.value.elements[0]);
+		gps_fix_port_id = value->natural16.value.elements[0];
+		return 0;
+	}
+
+	return -UAVCAN_REGISTER_ERROR_SERIALIZATION;
+}
+
+uavcan_register_Value_1_0 get_gps_aux_port_id()
+{
+	void *dataReturn;
+	uavcan_register_Value_1_0 value;
+
+	value.natural16.value.elements[0] = gps_aux_port_id;
+	value.natural16.value.count = 1;
+	value._tag_ = 10; // TODO does nunavut generate ENUM/defines for this??
+	return value;
 }
 
 /****************************************************************************
@@ -212,8 +242,9 @@ void processTxRxOnce(CanardInstance *ins, CanardSocketInstance *sock_ins, int ti
 			if (socketcanTransmit(sock_ins, txf) == 0) {           // Send the frame. Redundant interfaces may be used here.
 				break;                             // If the driver is busy, break and retry later.
 			}
+
 		} else {
-		    printf("Timeout??\n");
+			printf("Timeout??\n");
 		}
 
 		canardTxPop(ins);                         // Remove the frame from the queue after it's transmitted.
@@ -245,13 +276,15 @@ void processTxRxOnce(CanardInstance *ins, CanardSocketInstance *sock_ins, int ti
 		fprintf(stderr, "Receive error %d\n", result);
 
 	} else if (result == 1) {
-                printf("Receive portId %i\n", receive.port_id);
-                if(receive.port_id == PNPGetPortID(ins)) {
-                    PNPProcess(ins,&receive);
-                } else {
-                    uavcan_register_interface_process(ins, &receive);
-                }
-        
+		printf("Receive portId %i\n", receive.port_id);
+
+		if (receive.port_id == PNPGetPortID(ins)) {
+			PNPProcess(ins, &receive);
+
+		} else {
+			uavcan_register_interface_process(ins, &receive);
+		}
+
 		ins->memory_free(ins, (void *)receive.payload); // Deallocate the dynamic memory afterwards.
 
 	} else {
@@ -314,49 +347,47 @@ static int canard_daemon(int argc, char *argv[])
 		errval = 2;
 		goto errout_with_dev;
 	}
-	
+
 	/* MAVCAN extras */
-	
-    /* Dynamic NodeId */
 
-    /* Init UAVCAN register interfaces */
-    uavcan_node_GetInfo_Response_1_0 node_information; // TODO ADD INFO
-    uavcan_register_interface_init(&ins, &node_information);
-    uavcan_register_interface_add_entry("gnss_fix",set_gps_fix_port_id,get_gps_fix_port_id);
-    uavcan_register_interface_add_entry("gnss_aux",set_gps_aux_port_id,get_gps_aux_port_id);
-    
-    initPNPAllocatee(&ins, unique_id);
+	/* Dynamic NodeId */
 
-    uint32_t random_no;
-    random_no = ((float)rand() / RAND_MAX) * (1000000);   
+	/* Init UAVCAN register interfaces */
+	uavcan_node_GetInfo_Response_1_0 node_information; // TODO ADD INFO
+	uavcan_register_interface_init(&ins, &node_information);
+	uavcan_register_interface_add_entry("gnss_uorb", set_gps_uorb_port_id, get_gps_uorb_port_id);
+	uavcan_register_interface_add_entry("gnss_fix", set_gps_fix_port_id, get_gps_fix_port_id);
+	uavcan_register_interface_add_entry("gnss_aux", set_gps_aux_port_id, get_gps_aux_port_id);
 
-    uint64_t next_alloc_req = getMonotonicTimestampUSec() + random_no;	
+	initPNPAllocatee(&ins, unique_id);
 
-    while(ins.node_id == CANARD_NODE_ID_UNSET) {
-        // process the TX and RX buffer
-        processTxRxOnce(&ins, &sock_ins, 10); //10Ms
-        
-        const uint64_t ts = getMonotonicTimestampUSec();
+	uint32_t random_no;
+	random_no = ((float)rand() / RAND_MAX) * (1000000);
 
-        if (ts >= next_alloc_req)
-            {
-                next_alloc_req += ((float)rand() / RAND_MAX) * (1000000);
-                int32_t result = PNPAllocRequest(&ins);
-                if(result) {
-                    ins.node_id = PNPGetNodeID();
-                }
-            }
-    }
-    
+	uint64_t next_alloc_req = getMonotonicTimestampUSec() + random_no;
 
+	while (ins.node_id == CANARD_NODE_ID_UNSET) {
+		// process the TX and RX buffer
+		processTxRxOnce(&ins, &sock_ins, 10); //10Ms
 
+		const uint64_t ts = getMonotonicTimestampUSec();
+
+		if (ts >= next_alloc_req) {
+			next_alloc_req += ((float)rand() / RAND_MAX) * (1000000);
+			int32_t result = PNPAllocRequest(&ins);
+
+			if (result) {
+				ins.node_id = PNPGetNodeID();
+			}
+		}
+	}
 
 	printf("canard_daemon: canard initialized\n");
 	printf("start node (ID: %d MTU: %d)\n", ins.node_id,
 	       ins.mtu_bytes);
 
 	/* Initialize uORB publishers & subscribers */
-	uorbConverterInit(&ins, &gps_fix_port_id, &gps_aux_port_id);
+	uorbConverterInit(&ins, &gps_uorb_port_id, &gps_fix_port_id, &gps_aux_port_id);
 
 	g_canard_daemon_started = true;
 	uint64_t next_1hz_service_at = getMonotonicTimestampUSec();
