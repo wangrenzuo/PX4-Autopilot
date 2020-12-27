@@ -8,6 +8,8 @@
 #include "uavcan/node/GetInfo_1_0.h"
 #include "uavcan/_register/Value_1_0.h"
 
+#include "time.h"
+
 //No of pre allocated register entries
 #ifndef UAVCAN_REGISTER_COUNT
 # define UAVCAN_REGISTER_COUNT 5

@@ -209,13 +209,19 @@ static void memFree(CanardInstance *const ins, void *const pointer)
  * Description:
  *
  ****************************************************************************/
+
+
 uint64_t getMonotonicTimestampUSec(void)
 {
+	int ret;
 	struct timespec ts;
 
 	memset(&ts, 0, sizeof(ts));
 
-	if (clock_gettime(CLOCK_MONOTONIC, &ts) != 0) {
+	ret = clock_gettime(CLOCK_MONOTONIC, &ts);
+
+	if (ret != 0) {
+		PX4_ERR("clock error %i", ret);
 		abort();
 	}
 

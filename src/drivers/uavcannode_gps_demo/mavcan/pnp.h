@@ -56,6 +56,8 @@
 #define NUNAVUT_ASSERT
 #include <canard.h>
 
+#include "time.h"
+
 
 uint32_t initPNPAllocatee(CanardInstance *ins, uint8_t *unique_id);
 

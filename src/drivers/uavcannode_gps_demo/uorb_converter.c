@@ -15,8 +15,6 @@
 #include <legacy/equipment/gnss/Fix2_1_0.h>
 #include <legacy/equipment/gnss/Auxiliary_1_0.h>
 
-
-
 /****************************************************************************
  * Private Data
  ****************************************************************************/
@@ -79,7 +77,7 @@ void uorbProcessSub(int timeout_msec)
 			/* copy sensors raw data into local buffer */
 			orb_copy(ORB_ID(sensor_gps), uorb_sub_fd, &raw);
 
-			CanardMicrosecond transmission_deadline = getMonotonicTimestampUSec() + 1000 * 100;
+			CanardMicrosecond transmission_deadline = getMonotonicTimestampUSec() + (uint64_t)(1000ULL * 100ULL);
 
 			// raw uORB sensor_gps message
 			if (*gps_raw_uorb_port_id != -1) {
@@ -206,7 +204,7 @@ void uorbProcessSub(int timeout_msec)
 				}
 			}
 
-			PX4_INFO("Recevied data from uORB topic");
+			PX4_INFO("Recv from uORB");
 		}
 	}
 }

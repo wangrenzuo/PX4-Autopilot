@@ -18,6 +18,9 @@
 #include <canard.h>
 #include <canard_dsdl.h>
 
+/* monotonic timestamp */
+#include "mavcan/time.h"
+
 
 /****************************************************************************
  * Pre-processor Definitions
