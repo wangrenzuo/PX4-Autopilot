@@ -54,8 +54,8 @@ public:
 	void set_device_type(uint8_t devtype);
 	void set_error_count(uint32_t error_count) { _error_count = error_count; }
 	void increase_error_count() { _error_count++; }
-	void set_range(float range) { _range = range; UpdateClipLimit(); }
-	void set_scale(float scale) { _scale = scale; UpdateClipLimit(); }
+	void set_range(float range) { _range = range; }
+	void set_scale(float scale) { _scale = scale; }
 	void set_temperature(float temperature) { _temperature = temperature; }
 
 	void update(const hrt_abstime &timestamp_sample, float x, float y, float z);
@@ -63,9 +63,6 @@ public:
 	void updateFIFO(sensor_accel_fifo_s &sample);
 
 private:
-	void Publish(const hrt_abstime &timestamp_sample, float x, float y, float z, uint8_t clip_count[3]);
-	void UpdateClipLimit();
-
 	uORB::PublicationMulti<sensor_accel_s> _sensor_pub;
 	uORB::PublicationMulti<sensor_accel_fifo_s>  _sensor_fifo_pub;
 
@@ -77,8 +74,6 @@ private:
 	float			_range{16 * CONSTANTS_ONE_G};
 	float			_scale{1.f};
 	float			_temperature{NAN};
-
-	float			_clip_limit{_range / _scale};
 
 	uint32_t		_error_count{0};
 

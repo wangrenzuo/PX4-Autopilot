@@ -84,16 +84,34 @@ void PX4Gyroscope::set_device_type(uint8_t devtype)
 
 void PX4Gyroscope::update(const hrt_abstime &timestamp_sample, float x, float y, float z)
 {
-	// publish
-	Publish(timestamp_sample, x, y, z);
+	// Apply rotation (before scaling)
+	rotate_3f(_rotation, x, y, z);
+
+	sensor_gyro_s report;
+
+	report.timestamp_sample = timestamp_sample;
+	report.device_id = _device_id;
+	report.temperature = _temperature;
+	report.error_count = _error_count;
+	report.x = x * _scale;
+	report.y = y * _scale;
+	report.z = z * _scale;
+	report.timestamp = hrt_absolute_time();
+
+	_sensor_pub.publish(report);
 }
 
 void PX4Gyroscope::updateFIFO(sensor_gyro_fifo_s &sample)
 {
 	// publish fifo
 	sample.device_id = _device_id;
+	sample.temperature = _temperature;
+	sample.error_count = _error_count;
 	sample.scale = _scale;
-	sample.rotation = _rotation;
+
+	for (int i = 0; i < sample.samples; i++) {
+		rotate_3i(_rotation, sample.x[i], sample.y[i], sample.z[i]);
+	}
 
 	sample.timestamp = hrt_absolute_time();
 	_sensor_fifo_pub.publish(sample);
@@ -116,25 +134,17 @@ void PX4Gyroscope::updateFIFO(sensor_gyro_fifo_s &sample)
 		const float z = integral(2) / (float)N;
 
 		// publish
-		Publish(sample.timestamp_sample, x, y, z);
+		sensor_gyro_s report;
+
+		report.timestamp_sample = sample.timestamp_sample;
+		report.device_id = _device_id;
+		report.temperature = _temperature;
+		report.error_count = _error_count;
+		report.x = x * _scale;
+		report.y = y * _scale;
+		report.z = z * _scale;
+		report.timestamp = hrt_absolute_time();
+
+		_sensor_pub.publish(report);
 	}
-}
-
-void PX4Gyroscope::Publish(const hrt_abstime &timestamp_sample, float x, float y, float z)
-{
-	// Apply rotation (before scaling)
-	rotate_3f(_rotation, x, y, z);
-
-	sensor_gyro_s report;
-
-	report.timestamp_sample = timestamp_sample;
-	report.device_id = _device_id;
-	report.temperature = _temperature;
-	report.error_count = _error_count;
-	report.x = x * _scale;
-	report.y = y * _scale;
-	report.z = z * _scale;
-	report.timestamp = hrt_absolute_time();
-
-	_sensor_pub.publish(report);
 }

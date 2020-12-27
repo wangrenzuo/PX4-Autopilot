@@ -1,6 +1,6 @@
 /****************************************************************************
  *
- *   Copyright (C) 2013 PX4 Development Team. All rights reserved.
+ *   Copyright (C) 2013-2020 PX4 Development Team. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -40,15 +40,17 @@
 #ifndef ROTATION_H_
 #define ROTATION_H_
 
-#include <unistd.h>
+#include <stdint.h>
+
 #include <mathlib/mathlib.h>
 #include <matrix/math.hpp>
+#include <px4_platform_common/defines.h>
 
 /**
  * Enum for board and external compass rotations.
  * This enum maps from board attitude to airframe attitude.
  */
-enum Rotation {
+enum Rotation : uint8_t {
 	ROTATION_NONE                = 0,
 	ROTATION_YAW_45              = 1,
 	ROTATION_YAW_90              = 2,
@@ -86,10 +88,10 @@ enum Rotation {
 	ROTATION_ROLL_180_PITCH_270  = 34,
 	ROTATION_ROLL_270_PITCH_270  = 35,
 	ROTATION_ROLL_90_PITCH_180_YAW_90 = 36,
-	ROTATION_ROLL_90_YAW_270     = 37,
+	ROTATION_ROLL_90_YAW_270          = 37,
 	ROTATION_ROLL_90_PITCH_68_YAW_293 = 38,
-	ROTATION_PITCH_315           = 39,
-	ROTATION_ROLL_90_PITCH_315   = 40,
+	ROTATION_PITCH_315                = 39,
+	ROTATION_ROLL_90_PITCH_315        = 40,
 
 	ROTATION_MAX
 };
@@ -156,11 +158,251 @@ get_rot_matrix(enum Rotation rot);
 __EXPORT matrix::Quatf
 get_rot_quaternion(enum Rotation rot);
 
+template<typename T>
+static constexpr bool rotate_3(enum Rotation rot, T &x, T &y, T &z)
+{
+	switch (rot) {
+	case ROTATION_NONE:
+		return true;
+
+	case ROTATION_YAW_90: {
+			T tmp = x;
+			x = -y;
+			y = tmp;
+		}
+
+		return true;
+
+	case ROTATION_YAW_180: {
+			x = -x;
+			y = -y;
+		}
+
+		return true;
+
+	case ROTATION_YAW_270: {
+			T tmp = x;
+			x = y;
+			y = -tmp;
+		}
+
+		return true;
+
+	case ROTATION_ROLL_180: {
+			y = -y;
+			z = -z;
+		}
+
+		return true;
+
+	case ROTATION_ROLL_180_YAW_90:
+
+	// FALLTHROUGH
+	case ROTATION_PITCH_180_YAW_270: {
+			T tmp = x;
+			x = y;
+			y = tmp;
+			z = -z;
+		}
+
+		return true;
+
+	case ROTATION_PITCH_180: {
+			x = -x;
+			z = -z;
+		}
+
+		return true;
+
+	case ROTATION_ROLL_180_YAW_270:
+
+	// FALLTHROUGH
+	case ROTATION_PITCH_180_YAW_90: {
+			T tmp = x;
+			x = -y;
+			y = -tmp;
+			z = -z;
+		}
+
+		return true;
+
+	case ROTATION_ROLL_90: {
+			T tmp = z;
+			z = y;
+			y = -tmp;
+		}
+
+		return true;
+
+	case ROTATION_ROLL_90_YAW_90: {
+			T tmp = x;
+			x = z;
+			z = y;
+			y = tmp;
+		}
+
+		return true;
+
+	case ROTATION_ROLL_270: {
+			T tmp = z;
+			z = -y;
+			y = tmp;
+		}
+
+		return true;
+
+	case ROTATION_ROLL_270_YAW_90: {
+			T tmp = x;
+			x = -z;
+			z = -y;
+			y = tmp;
+		}
+
+		return true;
+
+	case ROTATION_PITCH_90: {
+			T tmp = z;
+			z = -x;
+			x = tmp;
+		}
+
+		return true;
+
+	case ROTATION_PITCH_270: {
+			T tmp = z;
+			z = x;
+			x = -tmp;
+		}
+
+		return true;
+
+	case ROTATION_ROLL_180_PITCH_270: {
+			T tmp = z;
+			z = x;
+			x = tmp;
+			y = -y;
+		}
+
+		return true;
+
+	case ROTATION_ROLL_90_YAW_270: {
+			T tmp = x;
+			x = -z;
+			z = y;
+			y = -tmp;
+		}
+
+		return true;
+
+	case ROTATION_ROLL_90_PITCH_90: {
+			T tmp = x;
+			x = y;
+			y = -z;
+			z = -tmp;
+		}
+
+		return true;
+
+	case ROTATION_ROLL_180_PITCH_90: {
+			T tmp = x;
+			x = -z;
+			y = -y;
+			z = -tmp;
+		}
+
+		return true;
+
+	case ROTATION_ROLL_270_PITCH_90: {
+			T tmp = x;
+			x = -y;
+			y = z;
+			z = -tmp;
+		}
+
+		return true;
+
+	case ROTATION_ROLL_90_PITCH_180: {
+			T tmp = y;
+			x = -x;
+			y = -z;
+			z = -tmp;
+		}
+
+		return true;
+
+	case ROTATION_ROLL_270_PITCH_180: {
+			T tmp = y;
+			x = -x;
+			y = z;
+			z = tmp;
+		}
+
+		return true;
+
+	case ROTATION_ROLL_90_PITCH_270: {
+			T tmp = x;
+			x = -y;
+			y = -z;
+			z = tmp;
+		}
+
+		return true;
+
+	case ROTATION_ROLL_270_PITCH_270: {
+			T tmp = x;
+			x = y;
+			y = z;
+			z = tmp;
+		}
+
+		return true;
+
+	case ROTATION_ROLL_90_PITCH_180_YAW_90: {
+			T tmp = x;
+			x = z;
+			z = -y;
+			y = -tmp;
+		}
+
+		return true;
+
+	default:
+		break;
+	}
+
+	return false;
+}
+
+/**
+ * rotate a 3 element int16_t vector in-place
+ */
+__EXPORT inline void rotate_3i(enum Rotation rot, int16_t &x, int16_t &y, int16_t &z)
+{
+	if (!rotate_3(rot, x, y, z)) {
+		// otherwise use full rotation matrix for valid rotations
+		if (rot < ROTATION_MAX) {
+			const matrix::Vector3f r{get_rot_matrix(rot) *matrix::Vector3f{(float)x, (float)y, (float)z}};
+			x = math::constrain(roundf(r(0)), (float)INT16_MIN, (float)INT16_MAX);
+			y = math::constrain(roundf(r(1)), (float)INT16_MIN, (float)INT16_MAX);
+			z = math::constrain(roundf(r(2)), (float)INT16_MIN, (float)INT16_MAX);
+		}
+	}
+}
+
 /**
  * rotate a 3 element float vector in-place
  */
-__EXPORT void
-rotate_3f(enum Rotation rot, float &x, float &y, float &z);
-
+__EXPORT inline void rotate_3f(enum Rotation rot, float &x, float &y, float &z)
+{
+	if (!rotate_3(rot, x, y, z)) {
+		// otherwise use full rotation matrix for valid rotations
+		if (rot < ROTATION_MAX) {
+			const matrix::Vector3f r{get_rot_matrix(rot) *matrix::Vector3f{x, y, z}};
+			x = r(0);
+			y = r(1);
+			z = r(2);
+		}
+	}
+}
 
 #endif /* ROTATION_H_ */
