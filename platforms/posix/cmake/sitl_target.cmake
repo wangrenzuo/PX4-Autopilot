@@ -45,7 +45,7 @@ ExternalProject_Add(sitl_gazebo
 	USES_TERMINAL_BUILD true
 	EXCLUDE_FROM_ALL true
 	BUILD_ALWAYS 1
-	BUILD_COMMAND ${CMAKE_COMMAND} --build <BINARY_DIR>
+	BUILD_COMMAND ${CMAKE_COMMAND} --build <BINARY_DIR> -- -j1
 )
 
 ExternalProject_Add(mavsdk_tests
@@ -288,10 +288,3 @@ add_custom_target(list_vmd_make_targets
 	COMMENT "List of acceptable '${PX4_BOARD}' <viewer_model_debugger> targets:"
 	VERBATIM
 	)
-
-# vscode launch.json
-if(${PX4_BOARD_LABEL} MATCHES "replay")
-	configure_file(${CMAKE_CURRENT_SOURCE_DIR}/Debug/launch_replay.json.in ${PX4_SOURCE_DIR}/.vscode/launch.json COPYONLY)
-else()
-	configure_file(${CMAKE_CURRENT_SOURCE_DIR}/Debug/launch_sim.json.in ${PX4_SOURCE_DIR}/.vscode/launch.json COPYONLY)
-endif()

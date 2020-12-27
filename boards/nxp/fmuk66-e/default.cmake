@@ -22,6 +22,7 @@ px4_add_board(
 		camera_trigger
 		differential_pressure # all available differential pressure drivers
 		distance_sensor # all available distance sensor drivers
+		distance_sensor/srf05 # Specific driver
 		gps
 		#heater
 		#imu # all available imu drivers
@@ -87,6 +88,7 @@ px4_add_board(
 		#hardfault_log # Needs bbsrm
 		i2cdetect
 		led_control
+		mft
 		mixer
 		motor_ramp
 		motor_test
