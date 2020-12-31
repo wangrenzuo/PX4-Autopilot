@@ -39,33 +39,21 @@ px4_add_git_submodule(TARGET git_cmsis_v5 PATH "${CMAKE_CURRENT_SOURCE_DIR}/CMSI
 set(ROOT ${CMAKE_CURRENT_SOURCE_DIR}/CMSIS_5)
 set(DSP ${ROOT}/CMSIS/DSP)
 
+# Add DSP folder to module path
+list(APPEND CMAKE_MODULE_PATH ${DSP})
+
 set(GCC ON CACHE BOOL "")
 set(PLATFORM "FVP" CACHE STRING "")
-set(ARM_CPU ${ARCHITECTURE} CACHE STRING "Set ARM CPU. Default : cortex-m4")
-
-set(FASTMATH ON CACHE BOOL "")
-set(TRANSFORM ON CACHE BOOL "")
-#set(CONFIGTABLE ON CACHE BOOL "")
-#set(ALLFAST ON CACHE BOOL "")
-#set(ALLFFT ON CACHE BOOL "")
-
-add_compile_options(
-	#-Wno-strict-prototypes
-	-Wno-error
-
-	-DARM_FFT_ALLOW_TABLES
-
-	-DARM_ALL_FFT_TABLES
-	-DARM_TABLE_TWIDDLECOEF_Q15_128
-	-DARM_TABLE_BITREVIDX_FXT_128
-	-DARM_TABLE_REALCOEF_Q15
-
-	-DARMCM4_FP
-	-DARM_MATH_LOOPUNROLL
-	-DCORTEXM
-)
+set(ARM_CPU ${CMAKE_SYSTEM_PROCESSOR} CACHE STRING "Set ARM CPU. Default : cortex-m4")
 
 add_compile_options($<$<COMPILE_LANGUAGE:C>:-Wno-nested-externs>)
+add_compile_options($<$<COMPILE_LANGUAGE:C>:-Wno-float-equal>)
+add_compile_options($<$<COMPILE_LANGUAGE:C>:-Wno-cast-align>)
+add_compile_options($<$<COMPILE_LANGUAGE:C>:-Wno-double-promotion>)
+
+add_compile_options(${MAX_CUSTOM_OPT_LEVEL})
+
+add_subdirectory(${ROOT}/CMSIS/DSP/Source)
 
 px4_add_module(
 	MODULE modules__gyro_fft
@@ -75,33 +63,41 @@ px4_add_module(
 	COMPILE_FLAGS
 		${MAX_CUSTOM_OPT_LEVEL}
 	INCLUDES
-		${ROOT}/CMSIS/Core/Include
 		${DSP}/Include
 	SRCS
 		GyroFFT.cpp
 		GyroFFT.hpp
 
-		${DSP}/Source/BasicMathFunctions/arm_shift_q15.c
-
-		${DSP}/Source/CommonTables/arm_common_tables.c
-		${DSP}/Source/CommonTables/arm_const_structs.c
-
-		${DSP}/Source/ComplexMathFunctions/arm_cmplx_mult_cmplx_q15.c
-
-		${DSP}/Source/TransformFunctions/arm_bitreversal2.c
-
-		#${DSP}/Source/TransformFunctions/arm_cfft_init_q15.c
-		${DSP}/Source/TransformFunctions/arm_cfft_q15.c
-		${DSP}/Source/TransformFunctions/arm_cfft_radix4_q15.c
-
-		${DSP}/Source/TransformFunctions/arm_rfft_init_q15.c
-		${DSP}/Source/TransformFunctions/arm_rfft_q15.c
-		#${DSP}/Source/TransformFunctions/arm_rfft_radix4_q15.c
-
-		${DSP}/Source/SupportFunctions/arm_float_to_q15.c
-		${DSP}/Source/BasicMathFunctions/arm_mult_q15.c
-
 	DEPENDS
 		git_cmsis_v5
 		px4_work_queue
+
+		CMSISDSP
+		CMSISDSPBasicMath
+		CMSISDSPCommon
+		CMSISDSPSupport
+		CMSISDSPTransform
 )
+
+include(config)
+configcore(modules__gyro_fft ${ROOT})
+target_include_directories(modules__gyro_fft PRIVATE ${ROOT}/CMSIS/Core/Include)
+SET(PLATFORMID ${PLATFORMID} PARENT_SCOPE)
+set_platform_core()
+core_includes(modules__gyro_fft)
+SET(PLATFORMID ${PLATFORMID} PARENT_SCOPE)
+SET(COREID ${COREID} PARENT_SCOPE)
+
+add_dependencies(CMSISDSPBasicMath prebuild_targets)
+add_dependencies(CMSISDSPBayes prebuild_targets)
+add_dependencies(CMSISDSPCommon prebuild_targets)
+add_dependencies(CMSISDSPComplexMath prebuild_targets)
+add_dependencies(CMSISDSPController prebuild_targets)
+add_dependencies(CMSISDSPDistance prebuild_targets)
+add_dependencies(CMSISDSPFastMath prebuild_targets)
+add_dependencies(CMSISDSPFiltering prebuild_targets)
+add_dependencies(CMSISDSPMatrix prebuild_targets)
+add_dependencies(CMSISDSPStatistics prebuild_targets)
+add_dependencies(CMSISDSPSupport prebuild_targets)
+add_dependencies(CMSISDSPSVM prebuild_targets)
+add_dependencies(CMSISDSPTransform prebuild_targets)
