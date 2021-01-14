@@ -1,6 +1,6 @@
 /****************************************************************************
  *
- *   Copyright (c) 2012-2016 PX4 Development Team. All rights reserved.
+ *   Copyright (c) 2020 PX4 Development Team. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -32,23 +32,45 @@
  ****************************************************************************/
 
 /**
- * @file Magnetometer driver interface.
- */
+ * @file bootloader_main.c
+ *
+ * FMU-specific early startup code for bootloader
+*/
 
-#ifndef _DRV_MAG_H
-#define _DRV_MAG_H
+#include "board_config.h"
+#include "bl.h"
 
-#include <stdint.h>
-#include <sys/ioctl.h>
+#include <nuttx/config.h>
+#include <nuttx/board.h>
+#include <chip.h>
+#include <stm32_uart.h>
+#include <arch/board/board.h>
+#include "arm_internal.h"
+#include <px4_platform_common/init.h>
 
-#include "drv_sensor.h"
-#include "drv_orb_dev.h"
+extern int sercon_main(int c, char **argv);
 
-#define MAG_BASE_DEVICE_PATH	"/dev/mag"
-#define MAG0_DEVICE_PATH	"/dev/mag0"
-#define MAG1_DEVICE_PATH	"/dev/mag1"
-#define MAG2_DEVICE_PATH	"/dev/mag2"
+__EXPORT void board_on_reset(int status) {}
 
-#include <uORB/topics/sensor_mag.h>
+__EXPORT void stm32_boardinitialize(void)
+{
+	/* configure USB interfaces */
+	stm32_configgpio(GPIO_OTGFS_VBUS);
+}
 
-#endif /* _DRV_MAG_H */
+__EXPORT int board_app_initialize(uintptr_t arg)
+{
+	return 0;
+}
+
+void board_late_initialize(void)
+{
+	px4_platform_console_init();
+	sercon_main(0, NULL);
+}
+
+extern void sys_tick_handler(void);
+void board_timerhook(void)
+{
+	sys_tick_handler();
+}

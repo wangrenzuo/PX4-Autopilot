@@ -1,6 +1,6 @@
 /****************************************************************************
  *
- *   Copyright (c) 2012-2015 PX4 Development Team. All rights reserved.
+ *   Copyright (C) 2020 PX4 Development Team. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -32,24 +32,27 @@
  ****************************************************************************/
 
 /**
- * @file drv_baro.h
+ * @file usb.c
  *
- * Barometric pressure sensor driver interface.
+ * Board-specific USB functions.
  */
 
-#ifndef _DRV_BARO_H
-#define _DRV_BARO_H
+#include "board_config.h"
+#include <nuttx/usb/usbdev.h>
+#include <nuttx/usb/usbdev_trace.h>
+#include <stm32_otg.h>
 
-#include <px4_platform_common/defines.h>
-#include <stdint.h>
-#include <sys/ioctl.h>
-
-#include "drv_sensor.h"
-#include "drv_orb_dev.h"
-
-#define BARO_BASE_DEVICE_PATH	"/dev/baro"
-#define BARO0_DEVICE_PATH	"/dev/baro0"
-
-#include <uORB/topics/sensor_baro.h>
-
-#endif /* _DRV_BARO_H */
+/************************************************************************************
+ * Name:  stm32_usbsuspend
+ *
+ * Description:
+ *   Board logic must provide the stm32_usbsuspend logic if the USBDEV driver is
+ *   used.  This function is called whenever the USB enters or leaves suspend mode.
+ *   This is an opportunity for the board logic to shutdown clocks, power, etc.
+ *   while the USB is suspended.
+ *
+ ************************************************************************************/
+__EXPORT void stm32_usbsuspend(FAR struct usbdev_s *dev, bool resume)
+{
+	uinfo("resume: %d\n", resume);
+}

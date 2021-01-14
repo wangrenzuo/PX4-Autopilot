@@ -31,6 +31,8 @@
 #
 ############################################################################
 
+add_subdirectory(GeofenceBreachAvoidance)
+
 px4_add_module(
 	MODULE modules__navigator
 	MAIN navigator
@@ -53,4 +55,6 @@ px4_add_module(
 		git_ecl
 		ecl_geo
 		landing_slope
+		geofence_breach_avoidance
+		motion_planning
 	)

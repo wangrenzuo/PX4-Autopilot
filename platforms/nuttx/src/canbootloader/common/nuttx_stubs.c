@@ -1,6 +1,6 @@
 /****************************************************************************
  *
- *   Copyright (c) 2015 PX4 Development Team. All rights reserved.
+ *   Copyright (c) 2017-2021 PX4 Development Team. All rights reserved.
  *       Author: David Sidrane <david_s5@nscdg.com>
  *
  * Redistribution and use in source and binary forms, with or without
@@ -37,28 +37,67 @@
  ****************************************************************************/
 
 #include <nuttx/config.h>
+#include "nuttx/arch.h"
+#include "arm_internal.h"
 
-#include <nuttx/init.h>
-#include <nuttx/arch.h>
-#include <nuttx/kmalloc.h>
 
-#include <stdbool.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <syslog.h>
-#include <errno.h>
+/****************************************************************************
+ * Pre-processor Definitions
+ ****************************************************************************/
 
-#include <nuttx/board.h>
+/****************************************************************************
+ * Private Types
+ ****************************************************************************/
 
-#include "up_internal.h"
+/****************************************************************************
+ * Private Function Prototypes
+ ****************************************************************************/
 
-volatile dq_queue_t g_readytorun;
+/****************************************************************************
+ * Private Data
+ ****************************************************************************/
+
+/****************************************************************************
+ * Public Data
+ ****************************************************************************/
+
+/****************************************************************************
+ * Private Functions
+ ****************************************************************************/
+
+/****************************************************************************
+ * Public Functions
+ ****************************************************************************/
+__EXPORT int __wrap_nxsem_wait(void *sem);
+__EXPORT int __wrap_nxsem_post(void *sem);
+
+int main(int argc, char **argv);
+/****************************************************************************
+ * Name: nxsem_wait and nxsem_post
+ *
+ * Description:
+ *   These functions hijacks by the way of a compile time wrapper the systems
+ *   sem_wait and sem_post functions.
+ *
+ ****************************************************************************/
+
+int __wrap_nxsem_wait(void *sem)
+{
+	return 0;
+}
+
+int __wrap_nxsem_post(void *sem)
+{
+	return 0;
+}
 
 /****************************************************************************
  * Public Functions
  ****************************************************************************/
 void timer_init(void);
-int __wrap_up_svcall(int irq, FAR void *context);
+int __wrap_arm_svcall(int irq, FAR void *context);
+__EXPORT void __wrap_exit(int status);
+
 
 /****************************************************************************
  * Name: os_start
@@ -105,7 +144,7 @@ inline static void irq_stack_collor(void *pv, unsigned int nwords)
 }
 #endif
 
-void os_start(void)
+void __wrap_nx_start(void)
 {
 #ifdef CONFIG_STACK_COLORATION
 	/* Color the irq stack */
@@ -122,7 +161,7 @@ void os_start(void)
 #if !defined(CONFIG_SUPPRESS_INTERRUPTS) && !defined(CONFIG_SUPPRESS_TIMER_INTS) && \
     !defined(CONFIG_SYSTEMTICK_EXTCLK)
 	/* Initialize the OS's timer subsystem */
-	arm_timer_initialize();
+	up_timer_initialize();
 #endif
 
 	/* Keep the compiler happy for a no return function */
@@ -151,7 +190,7 @@ FAR void *malloc(size_t size)
  *   This function hijacks the systems exit
  *
  ****************************************************************************/
-void exit(int status)
+void __wrap_exit(int status)
 {
 	while (1);
 }
@@ -179,7 +218,7 @@ void sched_ufree(FAR void *address)
  *
  ****************************************************************************/
 
-int __wrap_up_svcall(int irq, FAR void *context)
+int __wrap_arm_svcall(int irq, FAR void *context)
 {
 	return 0;
 }

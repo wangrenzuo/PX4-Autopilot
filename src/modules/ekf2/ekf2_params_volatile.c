@@ -1,6 +1,6 @@
 /****************************************************************************
  *
- *   Copyright (c) 2014 PX4 Development Team. All rights reserved.
+ *   Copyright (c) 2020 PX4 Development Team. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -32,27 +32,12 @@
  ****************************************************************************/
 
 /**
- * @file drv_device.h
+ * Magnetic declination
  *
- * Generic device / sensor interface.
+ * @group EKF2
+ * @volatile
+ * @category system
+ * @unit deg
+ * @decimal 1
  */
-
-#ifndef _DRV_DEVICE_H
-#define _DRV_DEVICE_H
-
-#include <stdint.h>
-#include <sys/ioctl.h>
-
-#include "drv_sensor.h"
-#include "drv_orb_dev.h"
-
-#define _DEVICEIOCBASE          (0x100)
-#define _DEVICEIOC(_n)          (_PX4_IOC(_DEVICEIOCBASE, _n))
-
-/**
- * Return device ID, to enable matching of configuration parameters
- * (such as compass offsets) to specific sensors
- */
-#define DEVIOCGDEVICEID _DEVICEIOC(2)
-
-#endif /* _DRV_DEVICE_H */
+PARAM_DEFINE_FLOAT(EKF2_MAG_DECL, 0);

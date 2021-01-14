@@ -1,6 +1,6 @@
 /****************************************************************************
  *
- *   Copyright (C) 2013 PX4 Development Team. All rights reserved.
+ *   Copyright (c) 2020 PX4 Development Team. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -32,20 +32,33 @@
  ****************************************************************************/
 
 /**
- * @file Rangefinder driver interface.
+ * @file SlewRateYaw.hpp
+ *
+ * Library limit the rate of change of a [-pi,pi] range yaw value with a maximum slew rate.
+ *
+ * @author Matthias Grob <maetugr@gmail.com>
  */
 
-#ifndef _DRV_RANGEFINDER_H
-#define _DRV_RANGEFINDER_H
+#pragma once
 
-#include <stdint.h>
-#include <sys/ioctl.h>
+#include "SlewRate.hpp"
 
-#include "drv_sensor.h"
-#include "drv_orb_dev.h"
+template<typename Type>
+class SlewRateYaw : public SlewRate<Type>
+{
+public:
+	SlewRateYaw() = default;
+	~SlewRateYaw() = default;
 
-#define RANGE_FINDER_BASE_DEVICE_PATH	"/dev/range_finder"
-#define RANGE_FINDER0_DEVICE_PATH	"/dev/range_finder0"
-#define RANGE_FINDER_MAX_SENSORS	12	// Maximum number of sensors on bus
-
-#endif /* _DRV_RANGEFINDER_H */
+	/**
+	 * Update slewrate with yaw wrapping [-pi,pi]
+	 * @param new_value desired new value
+	 * @param deltatime time in seconds since last update
+	 * @return actual value that complies with the slew rate
+	 */
+	Type update(const Type new_value, const float deltatime)
+	{
+		const Type d_wrapped = matrix::wrap_pi(new_value - this->_value);
+		return matrix::wrap_pi(SlewRate<Type>::update(this->_value + d_wrapped, deltatime));
+	}
+};

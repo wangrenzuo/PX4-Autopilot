@@ -1,6 +1,6 @@
 ############################################################################
 #
-#   Copyright (c) 2019 PX4 Development Team. All rights reserved.
+#   Copyright (c) 2020 PX4 Development Team. All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
 # modification, are permitted provided that the following conditions
@@ -31,16 +31,9 @@
 #
 ############################################################################
 
-px4_add_module(
-	MODULE drivers__imu__st__ism330dlc
-	MAIN ism330dlc
-	SRCS
-		ism330dlc_main.cpp
-		ISM330DLC.cpp
-		ISM330DLC.hpp
-		ST_ISM330DLC_Registers.hpp
-	DEPENDS
-		drivers_accelerometer
-		drivers_gyroscope
-		px4_work_queue
-	)
+px4_add_library(geofence_breach_avoidance
+	geofence_breach_avoidance.cpp
+	geofence_breach_avoidance.h
+)
+
+px4_add_functional_gtest(SRC GeofenceBreachAvoidanceTest.cpp LINKLIBS geofence_breach_avoidance modules__navigator ecl_geo motion_planning)
