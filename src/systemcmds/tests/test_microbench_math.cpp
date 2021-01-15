@@ -48,6 +48,8 @@
 #include <px4_platform_common/px4_config.h>
 #include <px4_platform_common/micro_hal.h>
 
+#include "arm_math.h"
+
 namespace MicroBenchMath
 {
 
@@ -184,20 +186,40 @@ bool MicroBenchMath::time_single_precision_float()
 	PERF("float sub", f32_out -= f32, 100);
 	PERF("float mul", f32_out *= f32, 100);
 	PERF("float div", f32_out /= f32, 100);
-	PERF("float sqrt", f32_out = sqrtf(f32), 100);
+	PERF("float sqrt", f32_out = sqrtf(f32), 1000);
 
 	return true;
 }
 
 bool MicroBenchMath::time_single_precision_float_trig()
 {
-	PERF("sinf()", f32_out = sinf(f32), 100);
-	PERF("cosf()", f32_out = cosf(f32), 100);
-	PERF("tanf()", f32_out = tanf(f32), 100);
+	PERF("sinf()", f32_out = sinf(f32), 10000);
+	PERF("cosf()", f32_out = cosf(f32), 10000);
+	PERF("tanf()", f32_out = tanf(f32), 10000);
 
-	PERF("acosf()", f32_out = acosf(f32), 100);
-	PERF("asinf()", f32_out = asinf(f32), 100);
-	PERF("atan2f()", f32_out = atan2f(f32, 2.0f * f32), 100);
+	PERF("acosf()", f32_out = acosf(f32), 10000);
+	PERF("asinf()", f32_out = asinf(f32), 10000);
+	PERF("atan2f()", f32_out = atan2f(f32, 2.0f * f32), 10000);
+
+	// CMSIS
+	float cmsis_f32_out_test = 4;
+	PERF("arm_sin_f32()", f32_out = arm_sin_f32(f32), 10000);
+	PERF("arm_cos_f32()", f32_out = arm_cos_f32(f32), 10000);
+	PERF("arm_sqrt_f32()", arm_sqrt_f32(f32, &cmsis_f32_out_test), 100);
+
+
+	for (float x = -4 * M_PI_F; x < 4 * M_PI_F; x = x + 0.1f) {
+
+		const float y1 = sinf(x);
+		const float y2 = arm_sin_f32(x);
+		const float diff = fabsf(sinf(x) - arm_sin_f32(x));
+		const float error = diff / (y1 + y2 + 0.5f);
+
+		if (diff > 0.00001f || error > 0.01f) {
+			fprintf(stderr, "sinf(%.3f)=%3f, arm_sin_f32(%.3f)=%3f diff=%.6f\n", (double)x, (double)sinf(x), (double)x,
+				(double)arm_sin_f32(x), (double)(sinf(x) - arm_sin_f32(x)));
+		}
+	}
 
 	return true;
 }

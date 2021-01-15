@@ -17,93 +17,94 @@ px4_add_board(
 
 	DRIVERS
 		adc/board_adc
-		adc/ads1115
+		#adc/ads1115
 		barometer # all available barometer drivers
-		batt_smbus
-		camera_capture
-		camera_trigger
-		differential_pressure # all available differential pressure drivers
-		distance_sensor # all available distance sensor drivers
+		#batt_smbus
+		#camera_capture
+		#camera_trigger
+		#differential_pressure # all available differential pressure drivers
+		#distance_sensor # all available distance sensor drivers
+		distance_sensor/lightware_laser_serial
 		dshot
-		gps
-		heater
+		#gps
+		#heater
 		#imu # all available imu drivers
-		imu/adis16448
-		imu/adis16477
-		imu/adis16497
+		#imu/adis16448
+		#imu/adis16477
+		#imu/adis16497
 		imu/invensense/icm20602
 		imu/invensense/icm20608g
-		imu/invensense/icm40609d
-		imu/invensense/mpu6500
+		#imu/invensense/icm40609d
+		#imu/invensense/mpu6500
 		imu/invensense/mpu9250
-		irlock
-		lights/blinkm
-		lights/rgbled
-		lights/rgbled_ncp5623c
+		#irlock
+		#lights/blinkm
+		#lights/rgbled
+		#lights/rgbled_ncp5623c
 		magnetometer # all available magnetometer drivers
-		mkblctrl
-		optical_flow # all available optical flow drivers
+		#mkblctrl
+		#optical_flow # all available optical flow drivers
 		#osd
-		pca9685
-		pca9685_pwm_out
+		#pca9685
+		#pca9685_pwm_out
 		#protocol_splitter
-		pwm_input
-		pwm_out_sim
-		pwm_out
+		#pwm_input
+		#pwm_out_sim
+		#pwm_out
 		rc_input
-		roboclaw
-		safety_button
-		tap_esc
-		telemetry # all available telemetry drivers
+		#roboclaw
+		#safety_button
+		#tap_esc
+		#telemetry # all available telemetry drivers
 		test_ppm
-		tone_alarm
-		uavcan
+		#tone_alarm
+		#uavcan
 	MODULES
-		airspeed_selector
-		attitude_estimator_q
-		battery_status
-		camera_feedback
+		#airspeed_selector
+		#attitude_estimator_q
+		#battery_status
+		#camera_feedback
 		commander
 		dataman
 		ekf2
-		esc_battery
-		events
-		flight_mode_manager
-		fw_att_control
-		fw_pos_control_l1
-		land_detector
-		landing_target_estimator
-		load_mon
-		local_position_estimator
-		logger
+		#esc_battery
+		#events
+		#flight_mode_manager
+		#fw_att_control
+		#fw_pos_control_l1
+		#land_detector
+		#landing_target_estimator
+		#load_mon
+		#local_position_estimator
+		#logger
 		mavlink
-		mc_att_control
-		mc_hover_thrust_estimator
-		mc_pos_control
-		mc_rate_control
+		#mc_att_control
+		#mc_hover_thrust_estimator
+		#mc_pos_control
+		#mc_rate_control
 		#micrortps_bridge
 		navigator
-		rc_update
-		rover_pos_control
+		#rc_update
+		#rover_pos_control
 		sensors
-		sih
-		temperature_compensation
-		uuv_att_control
-		vmount
-		vtol_att_control
+		#sih
+		#temperature_compensation
+		#uuv_att_control
+		#vmount
+		#vtol_att_control
 	SYSTEMCMDS
 		bl_update
 		#dmesg
 		dumpfile
-		esc_calib
-		gpio
+		#esc_calib
+		#gpio
 		hardfault_log
-		i2cdetect
+		#i2cdetect
 		led_control
 		mft
-		mixer
-		motor_ramp
-		motor_test
+		#mixer
+		#motor_ramp
+		#motor_test
 		mtd
 		nshterm
 		param
@@ -111,26 +112,26 @@ px4_add_board(
 		pwm
 		reboot
 		reflect
-		sd_bench
+		#sd_bench
 		system_time
 		tests # tests and test runner
 		top
-		topic_listener
+		#topic_listener
 		tune_control
 		usb_connected
 		ver
 		work_queue
 	EXAMPLES
-		fake_gyro
-		fake_magnetometer
-		fixedwing_control # Tutorial code from https://px4.io/dev/example_fixedwing_control
+		#fake_gyro
+		#fake_magnetometer
+		#fixedwing_control # Tutorial code from https://px4.io/dev/example_fixedwing_control
 		gyro_fft
-		hello
-		hwtest # Hardware test
+		#hello
+		#hwtest # Hardware test
 		#matlab_csv_serial
-		px4_mavlink_debug # Tutorial code from http://dev.px4.io/en/debug/debug_values.html
-		px4_simple_app # Tutorial code from http://dev.px4.io/en/apps/hello_sky.html
-		rover_steering_control # Rover example app
-		uuv_example_app
-		work_item
+		#px4_mavlink_debug # Tutorial code from http://dev.px4.io/en/debug/debug_values.html
+		#px4_simple_app # Tutorial code from http://dev.px4.io/en/apps/hello_sky.html
+		#rover_steering_control # Rover example app
+		#uuv_example_app
+		#work_item
 	)
