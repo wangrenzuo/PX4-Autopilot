@@ -175,7 +175,14 @@ int32_t uavcan_register_interface_access_response(CanardInstance *ins, CanardTra
 
 	uavcan_register_Access_Response_1_0 response_msg;
 	uavcan_register_Access_Response_1_0_initialize_(&response_msg);
-	response_msg.value = register_list[index].cb_get();
+
+	if (index < register_list_size)  { // Index is available
+		response_msg.value = register_list[index].cb_get();
+
+	} else { // Index not found return empty response
+		uavcan_register_Value_1_0_initialize_(&response_msg.value);
+		uavcan_register_Value_1_0_select_empty_(&response_msg.value);
+	}
 
 	uint8_t response_payload_buffer[uavcan_register_Access_Response_1_0_SERIALIZATION_BUFFER_SIZE_BYTES_];
 
