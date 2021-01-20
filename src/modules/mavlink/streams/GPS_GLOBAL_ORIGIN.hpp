@@ -56,7 +56,7 @@ public:
 		return 0;
 	}
 
-	bool request_message(float param2, float param3, float param4, float param5, float param6, float param7)
+	bool request_message(float param2, float param3, float param4, float param5, float param6, float param7) override
 	{
 		if (_valid) {
 			_force_next_send = true;
@@ -72,8 +72,8 @@ private:
 
 	uORB::Subscription _vehicle_local_position_sub{ORB_ID(vehicle_local_position)};
 
-	double _ref_lat{NAN};
-	double _ref_lon{NAN};
+	double _ref_lat{static_cast<double>(NAN)};
+	double _ref_lon{static_cast<double>(NAN)};
 	float _ref_alt{NAN};
 
 	bool _valid{false};

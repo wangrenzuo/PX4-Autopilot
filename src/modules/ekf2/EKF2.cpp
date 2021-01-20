@@ -215,15 +215,16 @@ bool EKF2::multi_init(int imu, int mag)
 int EKF2::print_status()
 {
 	uint64_t origin_time {};
-	map_projection_reference_s origin_pos {};
+	double latitude {};
+	double longitude {};
 	float origin_alt {};
 
-	_ekf.getEkfGlobalOrigin(origin_time, origin_pos, origin_alt);
+	_ekf.getEkfGlobalOrigin(origin_time, latitude, longitude, origin_alt);
 
-	PX4_INFO_RAW("ekf2:%d\n attitude: %d\n, local position: %d\n, global position: %f, %f, %f\n\n", _instance,
-		     _ekf.attitude_valid(),
-		     _ekf.local_position_is_valid(), math::degrees(origin_pos.lat_rad), math::degrees(origin_pos.lon_rad),
-		     (double)origin_alt);
+	PX4_INFO_RAW("ekf2 instance:\t\t%d\nattitude valid:\t\t%s\nlocal position valid:\t%s\nglobal position (LLA):\t%3.7f, %3.7f, %4.1f\n",
+		     _instance, _ekf.attitude_valid() ? "true" : "false", _ekf.local_position_is_valid() ? "true" : "false",
+		     latitude, longitude, static_cast<double>(origin_alt));
+
 	perf_print_counter(_ecl_ekf_update_perf);
 	perf_print_counter(_ecl_ekf_update_full_perf);
 	return 0;
@@ -278,21 +279,18 @@ void EKF2::Run()
 		if (_vehicle_command_sub.update(&vehicle_command)) {
 			if (vehicle_command.command == vehicle_command_s::VEHICLE_CMD_SET_GPS_GLOBAL_ORIGIN) {
 				if (!_ekf.control_status_flags().in_air) {
+
+					uint64_t origin_time {};
 					double latitude = vehicle_command.param5;
 					double longitude = vehicle_command.param6;
 					float altitude = vehicle_command.param7;
 
 					_ekf.setEkfGlobalOrigin(latitude, longitude, altitude);
 
-					// Validate the origin was set.
-					uint64_t origin_time {};
-					map_projection_reference_s origin_pos {};
-					float origin_alt {};
-
-					_ekf.getEkfGlobalOrigin(origin_time, origin_pos, origin_alt);
-
-					PX4_INFO("NED global origin set to: %f, %f, %f\n\n",
-						 math::degrees(origin_pos.lat_rad), math::degrees(origin_pos.lon_rad), (double)origin_alt);
+					// Validate the ekf origin status.
+					_ekf.getEkfGlobalOrigin(origin_time, latitude, longitude, altitude);
+					PX4_INFO_RAW("Get NED origin (LLA): %3.10f, %3.10f, %4.3f\n",
+						     latitude, longitude, static_cast<double>(altitude));
 				}
 			}
 		}
