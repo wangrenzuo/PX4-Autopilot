@@ -290,12 +290,6 @@ bool FlightTaskAuto::_evaluateTriplets()
 			_yawspeed_setpoint = _ext_yaw_handler->get_weathervane_yawrate();
 		}
 
-
-
-	} else if (_type == WaypointType::follow_target && _sub_triplet_setpoint.get().current.yawspeed_valid) {
-		_yawspeed_setpoint = _sub_triplet_setpoint.get().current.yawspeed;
-		_yaw_setpoint = NAN;
-
 	} else {
 		if ((_type != WaypointType::takeoff || _sub_triplet_setpoint.get().current.disable_weather_vane)
 		    && _sub_triplet_setpoint.get().current.yaw_valid) {
@@ -416,23 +410,6 @@ void FlightTaskAuto::_setDefaultConstraints()
 	// only adjust limits if the new limit is lower
 	if (_constraints.speed_xy >= _param_mpc_xy_cruise.get()) {
 		_constraints.speed_xy = _param_mpc_xy_cruise.get();
-	}
-}
-
-Vector2f FlightTaskAuto::_getTargetVelocityXY()
-{
-	// guard against any bad velocity values
-	const float vx = _sub_triplet_setpoint.get().current.vx;
-	const float vy = _sub_triplet_setpoint.get().current.vy;
-	bool velocity_valid = PX4_ISFINITE(vx) && PX4_ISFINITE(vy) &&
-			      _sub_triplet_setpoint.get().current.velocity_valid;
-
-	if (velocity_valid) {
-		return Vector2f(vx, vy);
-
-	} else {
-		// just return zero speed
-		return Vector2f{};
 	}
 }
 

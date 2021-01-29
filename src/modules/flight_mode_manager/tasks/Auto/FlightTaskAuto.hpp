@@ -60,14 +60,11 @@
  * of the size
  */
 enum class WaypointType : int {
+	idle = position_setpoint_s::SETPOINT_TYPE_IDLE,
 	position = position_setpoint_s::SETPOINT_TYPE_POSITION,
-	velocity = position_setpoint_s::SETPOINT_TYPE_VELOCITY,
 	loiter = position_setpoint_s::SETPOINT_TYPE_LOITER,
 	takeoff = position_setpoint_s::SETPOINT_TYPE_TAKEOFF,
 	land = position_setpoint_s::SETPOINT_TYPE_LAND,
-	idle = position_setpoint_s::SETPOINT_TYPE_IDLE,
-	offboard = position_setpoint_s::SETPOINT_TYPE_OFFBOARD, // only part of this structure due to legacy reason. It is not used within the Auto flighttasks
-	follow_target = position_setpoint_s::SETPOINT_TYPE_FOLLOW_TARGET,
 };
 
 enum class State {
@@ -94,7 +91,7 @@ public:
 
 protected:
 	void _setDefaultConstraints() override;
-	matrix::Vector2f _getTargetVelocityXY(); /**< only used for follow-me and only here because of legacy reason.*/
+
 	void _updateInternalWaypoints(); /**< Depending on state of vehicle, the internal waypoints might differ from target (for instance if offtrack). */
 	bool _compute_heading_from_2D_vector(float &heading, matrix::Vector2f v); /**< Computes and sets heading a 2D vector */
 

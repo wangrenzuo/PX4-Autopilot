@@ -1845,12 +1845,6 @@ bool Mission::position_setpoint_equal(const position_setpoint_s *p1, const posit
 		(fabsf(p1->y - p2->y) < FLT_EPSILON) &&
 		(fabsf(p1->z - p2->z) < FLT_EPSILON) &&
 		(p1->position_valid == p2->position_valid) &&
-		(fabsf(p1->vx - p2->vx) < FLT_EPSILON) &&
-		(fabsf(p1->vy - p2->vy) < FLT_EPSILON) &&
-		(fabsf(p1->vz - p2->vz) < FLT_EPSILON) &&
-		(p1->velocity_valid == p2->velocity_valid) &&
-		(p1->velocity_frame == p2->velocity_frame) &&
-		(p1->alt_valid == p2->alt_valid) &&
 		(fabs(p1->lat - p2->lat) < DBL_EPSILON) &&
 		(fabs(p1->lon - p2->lon) < DBL_EPSILON) &&
 		(fabsf(p1->alt - p2->alt) < FLT_EPSILON) &&
@@ -1861,11 +1855,6 @@ bool Mission::position_setpoint_equal(const position_setpoint_s *p1, const posit
 		(fabsf(p1->loiter_radius - p2->loiter_radius) < FLT_EPSILON) &&
 		(p1->loiter_direction == p2->loiter_direction) &&
 		(fabsf(p1->pitch_min - p2->pitch_min) < FLT_EPSILON) &&
-		(fabsf(p1->a_x - p2->a_x) < FLT_EPSILON) &&
-		(fabsf(p1->a_y - p2->a_y) < FLT_EPSILON) &&
-		(fabsf(p1->a_z - p2->a_z) < FLT_EPSILON) &&
-		(p1->acceleration_valid == p2->acceleration_valid) &&
-		(p1->acceleration_is_force == p2->acceleration_is_force) &&
 		(fabsf(p1->acceptance_radius - p2->acceptance_radius) < FLT_EPSILON) &&
 		(fabsf(p1->cruising_speed - p2->cruising_speed) < FLT_EPSILON) &&
 		((fabsf(p1->cruising_throttle - p2->cruising_throttle) < FLT_EPSILON) || (!PX4_ISFINITE(p1->cruising_throttle)

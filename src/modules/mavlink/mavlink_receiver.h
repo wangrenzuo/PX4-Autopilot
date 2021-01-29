@@ -126,13 +126,6 @@ public:
 	static void *start_helper(void *context);
 
 	/**
-	 * Get the cruising speed in offboard control
-	 *
-	 * @return the desired cruising speed for the current flight mode
-	 */
-	float get_offb_cruising_speed();
-
-	/**
 	 * Set the cruising speed in offboard control
 	 *
 	 * Passing a negative value or leaving the parameter away will reset the cruising speed
@@ -268,7 +261,6 @@ private:
 	uORB::Publication<onboard_computer_status_s>		_onboard_computer_status_pub{ORB_ID(onboard_computer_status)};
 	uORB::Publication<generator_status_s>			_generator_status_pub{ORB_ID(generator_status)};
 	uORB::Publication<optical_flow_s>			_flow_pub{ORB_ID(optical_flow)};
-	uORB::Publication<position_setpoint_triplet_s>		_pos_sp_triplet_pub{ORB_ID(position_setpoint_triplet)};
 	uORB::Publication<sensor_gps_s>				_gps_pub{ORB_ID(sensor_gps)};
 	uORB::Publication<vehicle_attitude_s>			_attitude_pub{ORB_ID(vehicle_attitude)};
 	uORB::Publication<vehicle_attitude_setpoint_s>		_att_sp_pub{ORB_ID(vehicle_attitude_setpoint)};
@@ -277,6 +269,7 @@ private:
 	uORB::Publication<vehicle_global_position_s>		_global_pos_pub{ORB_ID(vehicle_global_position)};
 	uORB::Publication<vehicle_land_detected_s>		_land_detector_pub{ORB_ID(vehicle_land_detected)};
 	uORB::Publication<vehicle_local_position_s>		_local_pos_pub{ORB_ID(vehicle_local_position)};
+	uORB::Publication<vehicle_local_position_setpoint_s>	_trajectory_setpoint_pub{ORB_ID(trajectory_setpoint)};
 	uORB::Publication<vehicle_odometry_s>			_mocap_odometry_pub{ORB_ID(vehicle_mocap_odometry)};
 	uORB::Publication<vehicle_odometry_s>			_visual_odometry_pub{ORB_ID(vehicle_visual_odometry)};
 	uORB::Publication<vehicle_rates_setpoint_s>		_rates_sp_pub{ORB_ID(vehicle_rates_setpoint)};
@@ -307,8 +300,10 @@ private:
 	// ORB subscriptions
 	uORB::Subscription	_actuator_armed_sub{ORB_ID(actuator_armed)};
 	uORB::Subscription	_control_mode_sub{ORB_ID(vehicle_control_mode)};
+	uORB::Subscription	_home_position_sub{ORB_ID(home_position)};
 	uORB::Subscription	_vehicle_attitude_sub{ORB_ID(vehicle_attitude)};
 	uORB::Subscription	_vehicle_local_position_sub{ORB_ID(vehicle_local_position)};
+	uORB::Subscription	_vehicle_global_position_sub{ORB_ID(vehicle_global_position)};
 	uORB::Subscription	_vehicle_status_sub{ORB_ID(vehicle_status)};
 
 	uORB::SubscriptionInterval _parameter_update_sub{ORB_ID(parameter_update), 1_s};
@@ -330,6 +325,9 @@ private:
 	uint8_t				_mom_switch_pos[MOM_SWITCH_COUNT] {};
 	uint16_t			_mom_switch_state{0};
 
+	map_projection_reference_s	_global_local_proj_ref{};
+	float				_global_local_alt0{NAN};
+
 	uint64_t			_global_ref_timestamp{0};
 
 	map_projection_reference_s	_hil_local_proj_ref{};
@@ -337,9 +335,6 @@ private:
 	bool				_hil_local_proj_inited{false};
 
 	hrt_abstime			_last_utm_global_pos_com{0};
-
-	float 				_offb_cruising_speed_mc{-1.0f};
-	float 				_offb_cruising_speed_fw{-1.0f};
 
 	// Allocated if needed.
 	TunePublisher *_tune_publisher{nullptr};

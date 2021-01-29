@@ -57,7 +57,6 @@ protected:
 
 	void _prepareIdleSetpoints();
 	void _prepareLandSetpoints();
-	void _prepareVelocitySetpoints();
 	void _prepareTakeoffSetpoints();
 	void _preparePositionSetpoints();
 
@@ -72,8 +71,7 @@ protected:
 					(ParamFloat<px4::params::MPC_LAND_ALT2>)
 					_param_mpc_land_alt2, // altitude at which speed limit downwards reached minimum speed
 					(ParamFloat<px4::params::MPC_TKO_SPEED>) _param_mpc_tko_speed,
-					(ParamFloat<px4::params::MPC_TKO_RAMP_T>)
-					_param_mpc_tko_ramp_t // time constant for smooth takeoff ramp
+					(ParamFloat<px4::params::MPC_TKO_RAMP_T>) _param_mpc_tko_ramp_t // time constant for smooth takeoff ramp
 				       );
 
 private:

@@ -287,7 +287,8 @@ RoverPositionControl::control_velocity(const matrix::Vector3f &current_velocity,
 	float dt = 0.01; // Using non zero value to a avoid division by zero
 
 	const float mission_throttle = _param_throttle_cruise.get();
-	const matrix::Vector3f desired_velocity{pos_sp_triplet.current.vx, pos_sp_triplet.current.vy, pos_sp_triplet.current.vz};
+	//const matrix::Vector3f desired_velocity{pos_sp_triplet.current.vx, pos_sp_triplet.current.vy, pos_sp_triplet.current.vz};
+	const matrix::Vector3f desired_velocity{};
 	const float desired_speed = desired_velocity.norm();
 
 	if (desired_speed > 0.01f) {
@@ -305,7 +306,7 @@ RoverPositionControl::control_velocity(const matrix::Vector3f &current_velocity,
 
 		Vector3f desired_body_velocity;
 
-		if (pos_sp_triplet.current.velocity_frame == position_setpoint_s::VELOCITY_FRAME_BODY_NED) {
+		if (true) {
 			desired_body_velocity = desired_velocity;
 
 		} else {
